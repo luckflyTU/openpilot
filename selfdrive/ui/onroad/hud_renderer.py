@@ -101,7 +101,7 @@ class HudRenderer(Widget):
     v_ego = v_ego_cluster if self.v_ego_cluster_seen else car_state.vEgo
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
-    
+
     cores = self.params.get("CarD_CPU_Cores", encoding='utf-8')
     if cores:
     self.card_cpu_cores = cores
@@ -123,6 +123,7 @@ class HudRenderer(Widget):
       self._draw_set_speed(rect)
 
     self._draw_current_speed(rect)
+    self._draw_cpu_status(rect)
 
     button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
     button_y = rect.y + UI_CONFIG.border_size
@@ -185,23 +186,52 @@ class HudRenderer(Widget):
     unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
-    # ... (以上是原本顯示車速的程式碼) ...
+
+  # ---------------------------------------------------
+  # [新增] 從 Params 讀取 CPU 狀態
+  # ---------------------------------------------------
+  def draw_cpu_status(self):
+    # 設定起始位置 (第一行的位置)
+    # x=50 (靠左), y=600 (避開上方資訊列)
+    base_x, base_y = 50, 600
+
+    # 設定行高 (兩行文字之間的間距)
+    line_spacing = 50
 
     # ---------------------------------------------------
-    # [新增] 讀取並顯示 CPU 狀態
+    # 1. 取得 CPU 使用率 (維持每 30 幀更新一次)
+    # ---------------------------------------------------
+    self.frame_count += 1
+    if self.frame_count >= 30:
+        try:
+            usage = psutil.cpu_percent(interval=None)
+            self.cpu_usage_str = f"CPU Usage: {usage}%"
+        except:
+            self.cpu_usage_str = "CPU Usage: Err"
+        self.frame_count = 0
+
+    # ---------------------------------------------------
+    # 2. 取得核心綁定狀態 (從 Params 讀取)
     # ---------------------------------------------------
     try:
-        if self.card_cpu_cores:
-        rl.draw_text(
-          50, 600,                      # x, y 座標
-          f"carD CPU: {self.card_cpu_cores}",
-          color=(255, 255, 255, 200),  # RGBA
-          font_size=24,
-          bold=True,
-        )
+        status_bytes = self.params.get("CarCpuStatus")
+        if status_bytes:
+            core_status = f"Core Bind: {status_bytes.decode('utf-8')}"
+        else:
+            core_status = "Core Bind: Wait..."
+    except:
+        core_status = "Core Bind: Err"
 
-            
-    except Exception:
-        # 如果檔案還沒產生 (剛開機時)，顯示紅色等待字樣
-        rl.draw_text("Waiting CPU...", 50, 100, 30, rl.Color(255, 0, 0, 255))
     # ---------------------------------------------------
+    # 3. 繪圖 (分兩行繪製)
+    # ---------------------------------------------------
+    if hasattr(self, '_font'):
+        # 第一行：顯示核心綁定狀態
+        rl.draw_text_ex(self._font, core_status, rl.Vector2(base_x, base_y), 40, 0, rl.Color(0, 255, 0, 255))
+
+        # 第二行：顯示 CPU 使用率 (注意 Y 軸加上了 line_spacing)
+        rl.draw_text_ex(self._font, self.cpu_usage_str, rl.Vector2(base_x, base_y + line_spacing), 40, 0, rl.Color(0, 255, 0, 255))
+    else:
+        # 備用方案 (如果沒有字型物件)
+        rl.draw_text(core_status, int(base_x), int(base_y), 40, rl.Color(0, 255, 0, 255))
+        rl.draw_text(self.cpu_usage_str, int(base_x), int(base_y + line_spacing), 40, rl.Color(0, 255, 0, 255))

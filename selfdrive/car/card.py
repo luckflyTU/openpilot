@@ -4,6 +4,7 @@ import time
 import threading
 
 import cereal.messaging as messaging
+import psutil  # <--- [新增] 用來抓 CPU 使用率 2025/12/15+
 
 from cereal import car, log
 
@@ -209,6 +210,11 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    # === [新增] CPU 使用率相關變數 ===
+    self.cpu_usage_str = "CPU: --%"
+    self.frame_count = 0
+    # --------------------------------
+
   def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
 
@@ -360,30 +366,26 @@ def main():
       config_realtime_process(0, Priority.CTRL_HIGH)
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
-      
 
-    # ---------------------------------------------------
-    # 在 config_realtime_process(0, Priority.CTRL_HIGH) 之後加入：
-    # ---------------------------------------------------
+
+    # 2. 在 config_realtime_process(0, Priority.CTRL_HIGH) 執行之後加入：
+    # ----------------------------------------------------------------
     try:
-        params = Params()
-        # import os
-        # 取得目前此程序實際被允許運行的 CPU 核心列表
+        # 取得當前允許執行的 CPU 核心
         current_affinity = list(os.sched_getaffinity(0))
-        
-        # 將結果寫入到暫存檔 (例如 /tmp/card_cpu_status)
-        params.put("CarD_CPU_Cores", f"Core: {current_affinity}")
-        #with open("/tmp/card_cpu_status", "w") as f:
-        #    f.write(f"Card Core: {current_affinity}")
-    except Exception as e:
-        # 如果出錯，也寫入錯誤訊息
-        params.put("CarD_CPU_Cores", f"CPU Check Err")
-        #with open("/tmp/card_cpu_status", "w") as f:
-        #    f.write(f"CPU Check Err")
-    # ---------------------------------------------------
+
+        # 使用 Params 將結果寫入記憶體
+        # 鍵名: "CarCpuStatus" (您可以自訂)
+        # 內容: 必須轉為字串 (str)
+        Params().put("CarCpuStatus", str(current_affinity))
+
+    except Exception:
+        # 發生錯誤時寫入 Error
+        Params().put("CarCpuStatus", "CPU Check Err")
+    # ----------------------------------------------------------------
 
 
-  
+
   car = Car()
   car.card_thread()
 
