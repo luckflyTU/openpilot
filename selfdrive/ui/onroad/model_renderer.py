@@ -187,6 +187,12 @@ class ModelRenderer(Widget):
     )
 
     self._update_experimental_gradient()
+    
+    # === Step 3｜在 update / render state 前讀取 Params 2025/12/15+ ===
+    cores = self.params.get("CarD_CPU_Cores", encoding="utf-8")
+    if cores != self.card_cpu_cores:
+      self.card_cpu_cores = cores
+    # ------
 
   def _update_experimental_gradient(self):
     """Pre-calculate experimental mode gradient colors"""
