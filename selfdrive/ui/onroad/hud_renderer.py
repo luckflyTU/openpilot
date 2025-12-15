@@ -177,3 +177,37 @@ class HudRenderer(Widget):
     unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
+    # ... (以上是原本顯示車速的程式碼) ...
+
+    # ---------------------------------------------------
+    # [新增] 讀取並顯示 CPU 狀態
+    # ---------------------------------------------------
+    try:
+        # 設定顯示位置 (左上角 x=50, y=100)
+        debug_x, debug_y = 50, 600
+      
+        Params params;
+        QString carD_cores = QString::fromStdString(
+          params.get("CarD_CPU_Cores", false)
+        );
+      
+
+        # 讀取 card.py 產生的暫存檔
+        with open("/tmp/card_cpu_status", "r") as f:
+            cpu_status = f.read().strip()
+        
+        # 繪製文字 (綠色)
+        # 注意：使用 rl.Color (R, G, B, Alpha)
+        if hasattr(self, '_font'):
+             # 如果有字型物件，使用 draw_text_ex (更美觀)
+            #rl.draw_text_ex(self._font, cpu_status, rl.Vector2(debug_x, debug_y), 40, 0, rl.Color(0, 255, 0, 255))
+          rl.draw_text_ex(self._font, QString, rl.Vector2(debug_x, debug_y), 40, 0, rl.Color(0, 255, 0, 255))
+        else:
+            # 備用方案
+            #rl.draw_text(cpu_status, int(debug_x), int(debug_y), 40, rl.Color(0, 255, 0, 255))
+            rl.draw_text(QString, int(debug_x), int(debug_y), 40, rl.Color(0, 255, 0, 255))
+            
+    except Exception:
+        # 如果檔案還沒產生 (剛開機時)，顯示紅色等待字樣
+        rl.draw_text("Waiting CPU...", 50, 100, 30, rl.Color(255, 0, 0, 255))
+    # ---------------------------------------------------
