@@ -360,12 +360,13 @@ def main():
       config_realtime_process(0, Priority.CTRL_HIGH)
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
-      params = Params()
+      
 
     # ---------------------------------------------------
     # 在 config_realtime_process(0, Priority.CTRL_HIGH) 之後加入：
     # ---------------------------------------------------
     try:
+        params = Params()
         # import os
         # 取得目前此程序實際被允許運行的 CPU 核心列表
         current_affinity = list(os.sched_getaffinity(0))
