@@ -360,7 +360,19 @@ def main():
       config_realtime_process(0, Priority.CTRL_HIGH)
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
+      params = Params()
 
+    # 將實際使用的核心記錄下來，統一存成字串
+    # cores 可能是 int 或 list
+    if isinstance(cores, list):
+      core_str = ",".join(str(c) for c in cores)
+    else:
+      core_str = str(cores)
+    
+    params.put("CarD_CPU_Cores", core_str)
+
+
+  
   car = Car()
   car.card_thread()
 
