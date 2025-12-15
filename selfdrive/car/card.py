@@ -371,12 +371,14 @@ def main():
         current_affinity = list(os.sched_getaffinity(0))
         
         # 將結果寫入到暫存檔 (例如 /tmp/card_cpu_status)
-        with open("/tmp/card_cpu_status", "w") as f:
-            f.write(f"Card Core: {current_affinity}")
+        params.put("CarD_CPU_Cores", f"Core: {current_affinity}")
+        #with open("/tmp/card_cpu_status", "w") as f:
+        #    f.write(f"Card Core: {current_affinity}")
     except Exception as e:
         # 如果出錯，也寫入錯誤訊息
-        with open("/tmp/card_cpu_status", "w") as f:
-            f.write(f"CPU Check Err")
+        params.put("CarD_CPU_Cores", f"CPU Check Err")
+        #with open("/tmp/card_cpu_status", "w") as f:
+        #    f.write(f"CPU Check Err")
     # ---------------------------------------------------
 
 
