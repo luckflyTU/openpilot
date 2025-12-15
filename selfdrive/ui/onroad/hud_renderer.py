@@ -6,6 +6,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
+from openpilot.common.params import Params
 
 # Constants
 SET_SPEED_NA = 255
@@ -70,6 +71,8 @@ class HudRenderer(Widget):
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
 
     self._exp_button: ExpButton = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
+    self.params = Params()
+    self.card_cpu_cores = ""
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -98,6 +101,11 @@ class HudRenderer(Widget):
     v_ego = v_ego_cluster if self.v_ego_cluster_seen else car_state.vEgo
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
+    
+    cores = self.params.get("CarD_CPU_Cores", encoding='utf-8')
+    if cores:
+    self.card_cpu_cores = cores
+
 
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
@@ -183,29 +191,15 @@ class HudRenderer(Widget):
     # [新增] 讀取並顯示 CPU 狀態
     # ---------------------------------------------------
     try:
-        # 設定顯示位置 (左上角 x=50, y=100)
-        debug_x, debug_y = 50, 600
-      
-        Params params;
-        QString carD_cores = QString::fromStdString(
-          params.get("CarD_CPU_Cores", false)
-        );
-      
+        if self.card_cpu_cores:
+        rl.draw_text(
+          50, 600,                      # x, y 座標
+          f"carD CPU: {self.card_cpu_cores}",
+          color=(255, 255, 255, 200),  # RGBA
+          font_size=24,
+          bold=True,
+        )
 
-        # 讀取 card.py 產生的暫存檔
-        with open("/tmp/card_cpu_status", "r") as f:
-            cpu_status = f.read().strip()
-        
-        # 繪製文字 (綠色)
-        # 注意：使用 rl.Color (R, G, B, Alpha)
-        if hasattr(self, '_font'):
-             # 如果有字型物件，使用 draw_text_ex (更美觀)
-            #rl.draw_text_ex(self._font, cpu_status, rl.Vector2(debug_x, debug_y), 40, 0, rl.Color(0, 255, 0, 255))
-          rl.draw_text_ex(self._font, QString, rl.Vector2(debug_x, debug_y), 40, 0, rl.Color(0, 255, 0, 255))
-        else:
-            # 備用方案
-            #rl.draw_text(cpu_status, int(debug_x), int(debug_y), 40, rl.Color(0, 255, 0, 255))
-            rl.draw_text(QString, int(debug_x), int(debug_y), 40, rl.Color(0, 255, 0, 255))
             
     except Exception:
         # 如果檔案還沒產生 (剛開機時)，顯示紅色等待字樣
