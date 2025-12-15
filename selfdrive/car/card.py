@@ -336,7 +336,7 @@ class Car:
 #  car = Car()
 #  car.card_thread()
 
-def _choose_ctrl_cores(preferred=(0, 1)):
+def _choose_ctrl_cores(preferred=(0, 1, 2)):
   """Return either an int or a list of cores that exist on this device,
      filtered from the preferred tuple."""
   cpu_cnt = os.cpu_count() or 1
@@ -348,7 +348,7 @@ def _choose_ctrl_cores(preferred=(0, 1)):
 
 def main():
   # Choose robust cores for control (favor LITTLE cores on big.LITTLE SoCs like SD845)
-  cores = _choose_ctrl_cores(preferred=(0, 1))
+  cores = _choose_ctrl_cores(preferred=(0, 1, 2))
 
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
@@ -362,14 +362,22 @@ def main():
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
       params = Params()
 
-    # 將實際使用的核心記錄下來，統一存成字串
-    # cores 可能是 int 或 list
-    if isinstance(cores, list):
-      core_str = ",".join(str(c) for c in cores)
-    else:
-      core_str = str(cores)
-    
-    params.put("CarD_CPU_Cores", core_str)
+    # ---------------------------------------------------
+    # 在 config_realtime_process(0, Priority.CTRL_HIGH) 之後加入：
+    # ---------------------------------------------------
+    try:
+        # import os
+        # 取得目前此程序實際被允許運行的 CPU 核心列表
+        current_affinity = list(os.sched_getaffinity(0))
+        
+        # 將結果寫入到暫存檔 (例如 /tmp/card_cpu_status)
+        with open("/tmp/card_cpu_status", "w") as f:
+            f.write(f"Card Core: {current_affinity}")
+    except Exception as e:
+        # 如果出錯，也寫入錯誤訊息
+        with open("/tmp/card_cpu_status", "w") as f:
+            f.write(f"CPU Check Err")
+    # ---------------------------------------------------
 
 
   
