@@ -7,6 +7,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.params import Params
+import psutil
 
 # Constants
 SET_SPEED_NA = 255
@@ -102,9 +103,6 @@ class HudRenderer(Widget):
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-    cores = self.params.get("CarD_CPU_Cores", encoding='utf-8')
-    if cores:
-    self.card_cpu_cores = cores
 
 
   def _render(self, rect: rl.Rectangle) -> None:
@@ -190,10 +188,10 @@ class HudRenderer(Widget):
   # ---------------------------------------------------
   # [新增] 從 Params 讀取 CPU 狀態
   # ---------------------------------------------------
-  def draw_cpu_status(self):
+  def _draw_cpu_status(self, rect: rl.Rectangle):
     # 設定起始位置 (第一行的位置)
     # x=50 (靠左), y=600 (避開上方資訊列)
-    base_x, base_y = 50, 600
+    base_x, base_y = rect.x + 50, rect.y + 600
 
     # 設定行高 (兩行文字之間的間距)
     line_spacing = 50
