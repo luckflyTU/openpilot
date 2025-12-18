@@ -74,6 +74,10 @@ class HudRenderer(Widget):
     self._exp_button: ExpButton = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
     self.params = Params()
     self.card_cpu_cores = ""
+    # === [新增] CPU 使用率相關變數 ===
+    self.cpu_usage_str = "CPU: --%"
+    self.frame_count = 0
+    # --------------------------------
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -203,33 +207,35 @@ class HudRenderer(Widget):
     if self.frame_count >= 30:
         try:
             usage = psutil.cpu_percent(interval=None)
-            self.cpu_usage_str = f"CPU Usage: {usage}%"
-        except:
+            self.cpu_usage_str = f"CPU Usage: {usage:.1f}%" # 精確到小數點後一位
+        except Exception:
             self.cpu_usage_str = "CPU Usage: Err"
         self.frame_count = 0
 
     # ---------------------------------------------------
     # 2. 取得核心綁定狀態 (從 Params 讀取)
     # ---------------------------------------------------
+    core_status = "Core Bind: Err" # 預設錯誤狀態
     try:
         status_bytes = self.params.get("CarCpuStatus")
         if status_bytes:
             core_status = f"Core Bind: {status_bytes.decode('utf-8')}"
         else:
             core_status = "Core Bind: Wait..."
-    except:
+    except Exception:
         core_status = "Core Bind: Err"
 
     # ---------------------------------------------------
-    # 3. 繪圖 (分兩行繪製)
+    # 3. 繪圖 (分兩行繪製，參考 _draw_current_speed 方式)
     # ---------------------------------------------------
-    if hasattr(self, '_font'):
-        # 第一行：顯示核心綁定狀態
-        rl.draw_text_ex(self._font, core_status, rl.Vector2(base_x, base_y), 40, 0, rl.Color(0, 255, 0, 255))
+    font_size = 30 # 調整字體大小以適應介面
+    text_color = COLORS.white # 使用白色，提高可見度
 
-        # 第二行：顯示 CPU 使用率 (注意 Y 軸加上了 line_spacing)
-        rl.draw_text_ex(self._font, self.cpu_usage_str, rl.Vector2(base_x, base_y + line_spacing), 40, 0, rl.Color(0, 255, 0, 255))
-    else:
-        # 備用方案 (如果沒有字型物件)
-        rl.draw_text(core_status, int(base_x), int(base_y), 40, rl.Color(0, 255, 0, 255))
-        rl.draw_text(self.cpu_usage_str, int(base_x), int(base_y + line_spacing), 40, rl.Color(0, 255, 0, 255))
+    # 第一行：顯示核心綁定狀態
+    core_status_size = measure_text_cached(self._font_medium, core_status, font_size)
+    rl.draw_text_ex(self._font_medium, core_status, rl.Vector2(base_x, base_y), font_size, 0, text_color)
+
+    # 第二行：顯示 CPU 使用率
+    cpu_usage_pos_y = base_y + line_spacing
+    cpu_usage_size = measure_text_cached(self._font_medium, self.cpu_usage_str, font_size)
+    rl.draw_text_ex(self._font_medium, self.cpu_usage_str, rl.Vector2(base_x, cpu_usage_pos_y), font_size, 0, text_color)
