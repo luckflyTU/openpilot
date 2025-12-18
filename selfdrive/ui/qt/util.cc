@@ -29,7 +29,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return QObject::tr("T.O.P");
+  return QObject::tr("K.");
 }
 
 QString getUserAgent() {
