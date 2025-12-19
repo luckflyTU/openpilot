@@ -107,6 +107,16 @@ class HudRenderer(Widget):
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
+    # Update CPU usage every 30 frames
+    self.frame_count += 1
+    if self.frame_count >= 30:
+      try:
+        usage = psutil.cpu_percent(interval=None)
+        self.cpu_usage_str = f"CPU Usage: {usage:.1f}%"
+      except Exception:
+        self.cpu_usage_str = "CPU Usage: Err"
+      self.frame_count = 0
+
 
 
   def _render(self, rect: rl.Rectangle) -> None:
@@ -193,29 +203,19 @@ class HudRenderer(Widget):
   # [新增] 從 Params 讀取 CPU 狀態
   # ---------------------------------------------------
   def _draw_cpu_status(self, rect: rl.Rectangle):
-    # 設定起始位置 (第一行的位置)
-    # x=50 (靠左), y=600 (避開上方資訊列)
-    base_x, base_y = rect.x + 50, rect.y + 600
+    # 將 CPU 資訊顯示在左側 MAX 速度錶下方
+    set_speed_width = UI_CONFIG.set_speed_width_metric if ui_state.is_metric else UI_CONFIG.set_speed_width_imperial
+    base_x = rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
+    base_y = rect.y + 45 + UI_CONFIG.set_speed_height + 10 # 在 MAX speed box 下方
 
-    # 設定行高 (兩行文字之間的間距)
-    line_spacing = 50
-
-    # ---------------------------------------------------
-    # 1. 取得 CPU 使用率 (維持每 30 幀更新一次)
-    # ---------------------------------------------------
-    self.frame_count += 1
-    if self.frame_count >= 30:
-        try:
-            usage = psutil.cpu_percent(interval=None)
-            self.cpu_usage_str = f"CPU Usage: {usage:.1f}%" # 精確到小數點後一位
-        except Exception:
-            self.cpu_usage_str = "CPU Usage: Err"
-        self.frame_count = 0
+    line_spacing = 40
+    font_size = 28
+    text_color = COLORS.white
 
     # ---------------------------------------------------
-    # 2. 取得核心綁定狀態 (從 Params 讀取)
+    # 1. 取得核心綁定狀態 (從 Params 讀取)
     # ---------------------------------------------------
-    core_status = "Core Bind: Err" # 預設錯誤狀態
+    core_status = "Core Bind: Err"
     try:
         status_bytes = self.params.get("CarCpuStatus")
         if status_bytes:
@@ -226,16 +226,11 @@ class HudRenderer(Widget):
         core_status = "Core Bind: Err"
 
     # ---------------------------------------------------
-    # 3. 繪圖 (分兩行繪製，參考 _draw_current_speed 方式)
+    # 2. 繪圖 (分兩行繪製)
     # ---------------------------------------------------
-    font_size = 30 # 調整字體大小以適應介面
-    text_color = COLORS.white # 使用白色，提高可見度
-
     # 第一行：顯示核心綁定狀態
-    core_status_size = measure_text_cached(self._font_medium, core_status, font_size)
     rl.draw_text_ex(self._font_medium, core_status, rl.Vector2(base_x, base_y), font_size, 0, text_color)
 
     # 第二行：顯示 CPU 使用率
     cpu_usage_pos_y = base_y + line_spacing
-    cpu_usage_size = measure_text_cached(self._font_medium, self.cpu_usage_str, font_size)
     rl.draw_text_ex(self._font_medium, self.cpu_usage_str, rl.Vector2(base_x, cpu_usage_pos_y), font_size, 0, text_color)
