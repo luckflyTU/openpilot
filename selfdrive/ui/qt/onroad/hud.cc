@@ -301,15 +301,20 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 }
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
-  int base_x = surface_rect.center().x();
-  int base_y = 350;
-  int line_spacing = 50;
+  try {
+    int base_x = surface_rect.center().x();
+    int base_y = 380;
+    int line_spacing = 70;
 
-  p.setFont(InterFont(66));
-  // Draw core status
-  drawText(p, base_x, base_y, core_status_str, 200);
-  // Draw CPU usage
-  drawText(p, base_x, base_y + line_spacing, cpu_usage_str, 200);
+    p.setFont(InterFont(60));
+    // Draw core status
+    drawText(p, base_x, base_y, core_status_str, 200);
+    // Draw CPU usage
+    drawText(p, base_x, base_y + line_spacing, cpu_usage_str, 200);
+  } catch (const std::exception& e) {
+    // In case of any standard C++ exception, log it (optional)
+    // For example: qDebug() << "Error in drawCpuStatus:" << e.what();
+  }
 }
 
 void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
