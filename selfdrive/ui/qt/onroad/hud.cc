@@ -297,7 +297,7 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
   drawText(p, surface_rect.center().x(), 210, speedStr);
 
   p.setFont(InterFont(66));
-  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("<km/h>") : tr("mph"), 200);
+  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("km/h") : tr("mph"), 200);
 }
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
@@ -305,7 +305,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   int base_y = 350;
   int line_spacing = 50;
 
-  p.setFont(InterFont(40));
+  p.setFont(InterFont(66));
   // Draw core status
   drawText(p, base_x, base_y, core_status_str, 200);
   // Draw CPU usage
