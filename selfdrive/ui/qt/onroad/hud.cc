@@ -6,7 +6,7 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "selfdrive/common/params.h"
+#include "../../../../common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
 constexpr int SET_SPEED_NA = 255;
@@ -43,7 +43,7 @@ HudRenderer::HudRenderer() {
 void HudRenderer::updateState(const UIState &s) {
   is_metric = s.scene.is_metric;
   status = s.status;
-  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame && 
+  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame &&
                    (*s.sm)["selfdriveState"].getSelfdriveState().getAlertSize() != cereal::SelfdriveState::AlertSize::NONE;
 
   blindSpotLeft = s.scene.blind_spot_left;
@@ -135,25 +135,25 @@ void HudRenderer::updateState(const UIState &s) {
       long iowait = list[6].toLong();
       long irq = list[7].toLong();
       long softirq = list[8].toLong();
-      
+
       long total = user + nice + system + idle + iowait + irq + softirq;
       static long prev_total = 0, prev_idle = 0;
-      
+
       long total_diff = total - prev_total;
       long idle_diff = idle - prev_idle;
-      
+
       if (total_diff > 0) {
         float usage = (1.0 - (float)idle_diff / total_diff) * 100.0;
         cpu_usage_str = QString("CPU Usage: %1%").arg(usage, 0, 'f', 1);
       }
-      
+
       prev_total = total;
       prev_idle = idle;
       file.close();
     } else {
         cpu_usage_str = "CPU Usage: Err";
     }
-    
+
     // Core Status from Params
     std::string status_str = Params().get("CarCpuStatus");
     if (!status_str.empty()) {
@@ -297,7 +297,7 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
   drawText(p, surface_rect.center().x(), 210, speedStr);
 
   p.setFont(InterFont(66));
-  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("km/h") : tr("mph"), 200);
+  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("<km/h>") : tr("mph"), 200);
 }
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
@@ -362,10 +362,10 @@ void HudRenderer::drawSmartCruiseControlOnroadIcon(QPainter &p, const QRect &sur
   p.drawPath(boxPath);
 }
 
-void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img, 
+void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img,
                          QColor bg_color, qreal opacity) {
   p.setOpacity(opacity);
-  
+
   // Draw background circle
   if (bg_color.alpha() > 0) {
     p.setPen(Qt::NoPen);
@@ -439,9 +439,9 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
   constexpr int signalWidth = 142;
 
   // Calculate the vertical position for the turn signals
-  const int baseYPosition = (blindSpotLeft || blindSpotRight ? 
+  const int baseYPosition = (blindSpotLeft || blindSpotRight ?
                            (rect.height() - signalHeight) / 2 : 350);
-                           
+
   // Calculate the x-coordinates for the turn signals
   int leftSignalXPosition = rect.width() / 2 - 50 - 360 * (blindSpotLeft ? 2 : 0);
   int rightSignalXPosition = rect.width() / 2 - 50 + 360 * (blindSpotRight ? 2 : 0);
@@ -451,14 +451,14 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
 
   // Draw the turn signals
   if (animationFrameIndex < static_cast<int>(signalImgVector.size())) {
-    const auto drawSignal = [&](const bool signalActivated, const int xPosition, 
+    const auto drawSignal = [&](const bool signalActivated, const int xPosition,
                                const bool flip, const bool blindspot) {
       if (signalActivated) {
         // Get the appropriate image from the signalImgVector
         QPixmap signal = signalImgVector[
           (blindspot ? signalImgVector.size()-1 : animationFrameIndex % totalFrames)
         ].transformed(QTransform().scale(flip ? -1 : 1, 1));
-        
+
         // Draw the image
         p.drawPixmap(xPosition, baseYPosition, signalWidth, signalHeight, signal);
       }
