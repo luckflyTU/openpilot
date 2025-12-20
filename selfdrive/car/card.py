@@ -331,7 +331,7 @@ class Car:
       t.join()
 
 
-def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
+def _choose_ctrl_cores(preferred=(0, 1, 2)):
   """Return either an int or a list of cores that exist on this device,
      filtered from the preferred tuple."""
   cpu_cnt = os.cpu_count() or 1
@@ -343,7 +343,7 @@ def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
 
 def main():
   # Choose robust cores for control (favor LITTLE cores on big.LITTLE SoCs like SD845)
-  cores = _choose_ctrl_cores(preferred=(0, 1, 2, 3))
+  cores = _choose_ctrl_cores(preferred=(0, 1, 2))
 
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
@@ -352,7 +352,7 @@ def main():
     # sched_setaffinity invalid-argument often indicates an out-of-range core index
     cloudlog.warning("config_realtime_process(%s, CTRL_HIGH) failed: %s. Falling back to core 0.", cores, e)
     try:
-      config_realtime_process(0, Priority.CTRL_HIGH)
+      config_realtime_process(4, Priority.CTRL_HIGH)
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
 
