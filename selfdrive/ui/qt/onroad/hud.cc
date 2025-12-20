@@ -246,7 +246,7 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
   drawText(p, surface_rect.center().x(), 210, speedStr);
 
   p.setFont(InterFont(66));
-  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("km/h") : tr("mph"), 200);
+  drawText(p, surface_rect.center().x(), 290, is_metric ? tr("<km/h>") : tr("mph"), 200);
 }
 
 void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
