@@ -4,7 +4,6 @@ import time
 import threading
 
 import cereal.messaging as messaging
-import psutil  # <--- [新增] 用來抓 CPU 使用率 2025/12/15+
 
 from cereal import car, log
 
@@ -210,11 +209,6 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-    # === [新增] CPU 使用率相關變數 ===
-    self.cpu_usage_str = "CPU: --%"
-    self.frame_count = 0
-    # --------------------------------
-
   def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
 
@@ -336,12 +330,6 @@ class Car:
       e.set()
       t.join()
 
-
-#def main():
-#  config_realtime_process(4, Priority.CTRL_HIGH)
-#  car = Car()
-#  car.card_thread()
-
 def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
   """Return either an int or a list of cores that exist on this device,
      filtered from the preferred tuple."""
@@ -356,6 +344,7 @@ def main():
   # Choose robust cores for control (favor LITTLE cores on big.LITTLE SoCs like SD845)
   cores = _choose_ctrl_cores(preferred=(0, 1, 2, 3))
 
+  #config_realtime_process(4, Priority.CTRL_HIGH)
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
     config_realtime_process(cores, Priority.CTRL_HIGH)
@@ -367,15 +356,17 @@ def main():
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
 
-  # Check and record the final CPU affinity after attempting configuration
+  # Check and record the CPU affinity after setting realtime priority
   try:
     current_affinity = list(os.sched_getaffinity(0))
     Params().put("CarCpuStatus", str(current_affinity))
   except Exception:
+    cloudlog.exception("card failed to get cpu affinity")
     Params().put("CarCpuStatus", "CPU Check Err")
 
   car = Car()
   car.card_thread()
+
 
 if __name__ == "__main__":
   main()
