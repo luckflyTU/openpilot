@@ -367,24 +367,12 @@ def main():
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
 
-
-    # 2. 在 config_realtime_process(0, Priority.CTRL_HIGH) 執行之後加入：
-    # ----------------------------------------------------------------
-    try:
-        # 取得當前允許執行的 CPU 核心
-        current_affinity = list(os.sched_getaffinity(0))
-
-        # 使用 Params 將結果寫入記憶體
-        # 鍵名: "CarCpuStatus" (您可以自訂)
-        # 內容: 必須轉為字串 (str)
-        Params().put("CarCpuStatus", str(current_affinity))
-
-    except Exception:
-        # 發生錯誤時寫入 Error
-        Params().put("CarCpuStatus", "CPU Check Err")
-    # ----------------------------------------------------------------
-
-
+  # Check and record the final CPU affinity after attempting configuration
+  try:
+    current_affinity = list(os.sched_getaffinity(0))
+    Params().put("CarCpuStatus", str(current_affinity))
+  except Exception:
+    Params().put("CarCpuStatus", "CPU Check Err")
 
   car = Car()
   car.card_thread()
