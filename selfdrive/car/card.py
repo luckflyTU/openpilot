@@ -363,10 +363,10 @@ def main():
   # Check and record the final CPU affinity after attempting configuration
   try:
     current_affinity = list(os.sched_getaffinity(0))
-    Params().put("CarCpuStatus", str(current_affinity))
+    Params().put("CarCpuStatus", str(current_affinity).encode('utf-8'))
   except Exception:
     cloudlog.exception("card failed to get cpu affinity")
-    Params().put("CarCpuStatus", "CPU Check Err")
+    Params().put("CarCpuStatus", "CPU Check Err".encode('utf-8'))
 
   car = Car()
   car.card_thread()
