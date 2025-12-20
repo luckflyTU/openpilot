@@ -3,6 +3,10 @@
 #include <cmath>
 #include <QElapsedTimer>
 #include <QPainterPath>
+#include <QFile>
+#include <QTextStream>
+
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
 constexpr int SET_SPEED_NA = 255;
@@ -114,6 +118,52 @@ void HudRenderer::updateState(const UIState &s) {
     const auto live_map_data = sm["liveMapDataTOP"].getLiveMapDataTOP();
     road_name = QString::fromStdString(live_map_data.getRoadName());
   }
+
+  // Update CPU usage and core status
+  frame_count++;
+  if (frame_count >= 30) {
+    // CPU Usage
+    QFile file("/proc/stat");
+    if (file.open(QIODevice::ReadOnly)) {
+      QTextStream in(&file);
+      QString line = in.readLine();
+      QStringList list = line.split(" ");
+      long user = list[2].toLong();
+      long nice = list[3].toLong();
+      long system = list[4].toLong();
+      long idle = list[5].toLong();
+      long iowait = list[6].toLong();
+      long irq = list[7].toLong();
+      long softirq = list[8].toLong();
+      
+      long total = user + nice + system + idle + iowait + irq + softirq;
+      static long prev_total = 0, prev_idle = 0;
+      
+      long total_diff = total - prev_total;
+      long idle_diff = idle - prev_idle;
+      
+      if (total_diff > 0) {
+        float usage = (1.0 - (float)idle_diff / total_diff) * 100.0;
+        cpu_usage_str = QString("CPU Usage: %1%").arg(usage, 0, 'f', 1);
+      }
+      
+      prev_total = total;
+      prev_idle = idle;
+      file.close();
+    } else {
+        cpu_usage_str = "CPU Usage: Err";
+    }
+    
+    // Core Status from Params
+    std::string status_str = Params().get("CarCpuStatus");
+    if (!status_str.empty()) {
+        core_status_str = QString("Core Bind: %1").arg(QString::fromStdString(status_str));
+    } else {
+        core_status_str = "Core Bind: Wait...";
+    }
+
+    frame_count = 0;
+  }
 }
 
 void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
@@ -185,6 +235,7 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
     }
   }
   drawCurrentSpeed(p, surface_rect);
+  drawCpuStatus(p, surface_rect);
 
   if (drivingPersonalitiesUIWheel && !hideBottomIcons) {
     drawDrivingPersonalities(p, surface_rect);
@@ -247,6 +298,18 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 
   p.setFont(InterFont(66));
   drawText(p, surface_rect.center().x(), 290, is_metric ? tr("<km/h>") : tr("mph"), 200);
+}
+
+void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
+  int base_x = surface_rect.center().x();
+  int base_y = 350;
+  int line_spacing = 50;
+
+  p.setFont(InterFont(40));
+  // Draw core status
+  drawText(p, base_x, base_y, core_status_str, 200);
+  // Draw CPU usage
+  drawText(p, base_x, base_y + line_spacing, cpu_usage_str, 200);
 }
 
 void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
