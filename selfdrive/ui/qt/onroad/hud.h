@@ -17,6 +17,7 @@ public:
 private:
   void drawSetSpeed(QPainter &p, const QRect &surface_rect);
   void drawCurrentSpeed(QPainter &p, const QRect &surface_rect);
+  void drawCpuStatus(QPainter &p, const QRect &surface_rect);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   void drawIcon(QPainter &p, QPoint pos, const QPixmap &img, QColor bg_color = QColor(0,0,0,0), qreal opacity = 1.0);
@@ -45,6 +46,10 @@ private:
   bool v_ego_cluster_seen = false;
   bool brakeLights = false;
   int status = STATUS_DISENGAGED;
+
+  QString cpu_usage_str;
+  QString core_status_str;
+  int frame_count = 0;
 
   bool longOverride;
   bool smartCruiseControlVisionEnabled;
