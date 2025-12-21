@@ -330,7 +330,11 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     drawText(p, base_x, base_y, core_status_str, 200);
 
     // Draw CPU usage per core
-    QString cpu_usage_text = "CPU: " + QString::fromUtf8(cpu_usage_per_core.join(" ").toUtf8());
+    QStringList cpu_list;
+    for(const QString &s : cpu_usage_per_core) {
+      cpu_list.append(s);
+    }
+    QString cpu_usage_text = "CPU: " + cpu_list.join(" ");
     drawText(p, base_x, base_y + line_spacing, cpu_usage_text, 200);
 
   } catch (const std::exception& e) {
