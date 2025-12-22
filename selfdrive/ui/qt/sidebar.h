@@ -57,6 +57,12 @@ protected:
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
+  int frame_count = 0;
+  int cpu_usage = 0;
+  uint64_t last_cpu_idle = 0;
+  uint64_t last_cpu_total = 0;
+  int frame_count = 0;
+
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;
