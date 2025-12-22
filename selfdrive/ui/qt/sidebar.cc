@@ -134,11 +134,11 @@ void Sidebar::updateState(const UIState &s) {
   try {
     auto last_ping = deviceState.getLastAthenaPingTime();
     if (last_ping == 0) {
-      connectStatus = ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, warning_color};
+      connectStatus = ItemStatus{{tr("OFFLINE"), cpu_disp.toUtf8().data()}, warning_color};
     } else {
       connectStatus = nanos_since_boot() - last_ping < 80e9
-                          ? ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, good_color}
-                          : ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, danger_color};
+                          ? ItemStatus{{tr("ONLINE"), cpu_disp.toUtf8().data()}, good_color}
+                          : ItemStatus{{tr("ERROR"), cpu_disp.toUtf8().data()}, danger_color};
     }
   } catch (const std::exception& e) {
     LOGW("Error getting connect status: %s", e.what());
@@ -171,9 +171,9 @@ void Sidebar::updateState(const UIState &s) {
     core_disp = "ERR";
   }
 
-  ItemStatus pandaStatus = {{tr("CORE"), core_disp.toUtf8().data()}, good_color};
+  ItemStatus pandaStatus = {{tr("ONLINE"), core_disp.toUtf8().data()}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
+    pandaStatus = {{tr("NO PANDA"), core_disp.toUtf8().data()}, danger_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 
