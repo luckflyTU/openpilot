@@ -102,7 +102,7 @@ void Sidebar::updateState(const UIState &s) {
         QTextStream in(&file);
         QString line = in.readLine();
         if (line.startsWith("cpu ")) {
-          QStringList list = line.split(' ', Qt::SkipEmptyParts);
+          QStringList list = line.split(' ', QString::SkipEmptyParts);
           if (list.size() > 4) {
             uint64_t user = list[1].toULongLong();
             uint64_t nice = list[2].toULongLong();
