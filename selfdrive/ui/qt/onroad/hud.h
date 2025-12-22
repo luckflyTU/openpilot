@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPainter>
+#include <vector>
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/offroad/speed_limit/helpers.h"
 
@@ -48,8 +49,8 @@ private:
   int status = STATUS_DISENGAGED;
 
   QVector<QString> cpu_usage_per_core;
-  QVector<long> prev_cpu_total;
-  QVector<long> prev_cpu_idle;
+  std::vector<uint64_t> prev_cpu_total;
+  std::vector<uint64_t> prev_cpu_idle;
   QString core_status_str;
   int frame_count = 0;
 
