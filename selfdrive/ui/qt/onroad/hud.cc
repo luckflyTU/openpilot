@@ -135,7 +135,7 @@ void HudRenderer::updateState(const UIState &s) {
             if (line.startsWith("cpu ")) { // Skip aggregate CPU line
               continue;
             }
-            QStringList list = line.split(' ', Qt::SkipEmptyParts);
+            QStringList list = line.split(' ', QString::SkipEmptyParts);
             if (list.size() > 7) {
               long user = list[1].toLong();
               long nice = list[2].toLong();
