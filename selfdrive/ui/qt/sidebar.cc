@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/sidebar.h"
 
-#include <QMouseEvent>
+#include <QFile>
+#include <QTextStream>
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/common/params.h"
@@ -96,22 +97,32 @@ void Sidebar::updateState(const UIState &s) {
   frame_count++;
   if (frame_count >= 30) {
     try {
-      uint64_t cpu_idle = 0;
-      uint64_t cpu_total = 0;
-      for (auto const& c : deviceState.getCpuTimes()) {
-        cpu_idle += c.getIdle();
-        cpu_total += c.getUser() + c.getNice() + c.getSystem() + c.getIdle() + c.getIowait() + c.getIrq() + c.getSoftirq();
-      }
+      QFile file("/proc/stat");
+      if (file.open(QIODevice::ReadOnly)) {
+        QTextStream in(&file);
+        QString line = in.readLine();
+        if (line.startsWith("cpu ")) {
+          QStringList list = line.split(' ', Qt::SkipEmptyParts);
+          if (list.size() > 4) {
+            uint64_t user = list[1].toULongLong();
+            uint64_t nice = list[2].toULongLong();
+            uint64_t system = list[3].toULongLong();
+            uint64_t idle = list[4].toULongLong();
 
-      if (last_cpu_total > 0) {
-        uint64_t delta_idle = cpu_idle - last_cpu_idle;
-        uint64_t delta_total = cpu_total - last_cpu_total;
-        if (delta_total > 0) {
-          cpu_usage = (1.0 - (double)delta_idle / (double)delta_total) * 100;
+            uint64_t total = user + nice + system + idle;
+            if (last_cpu_total > 0) {
+              uint64_t total_diff = total - last_cpu_total;
+              uint64_t idle_diff = idle - last_cpu_idle;
+              if (total_diff > 0) {
+                cpu_usage = (1.0 - (double)idle_diff / total_diff) * 100;
+              }
+            }
+            last_cpu_total = total;
+            last_cpu_idle = idle;
+          }
         }
+        file.close();
       }
-      last_cpu_idle = cpu_idle;
-      last_cpu_total = cpu_total;
     } catch (const std::exception& e) {
       LOGW("Error calculating CPU usage: %s", e.what());
     }
