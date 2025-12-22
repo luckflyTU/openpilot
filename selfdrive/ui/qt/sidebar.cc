@@ -120,13 +120,18 @@ void Sidebar::updateState(const UIState &s) {
 
   QString cpu_disp = QString::number(cpu_usage) + "%";
   ItemStatus connectStatus;
-  auto last_ping = deviceState.getLastAthenaPingTime();
-  if (last_ping == 0) {
-    connectStatus = ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, warning_color};
-  } else {
-    connectStatus = nanos_since_boot() - last_ping < 80e9
-                        ? ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, good_color}
-                        : ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, danger_color};
+  try {
+    auto last_ping = deviceState.getLastAthenaPingTime();
+    if (last_ping == 0) {
+      connectStatus = ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, warning_color};
+    } else {
+      connectStatus = nanos_since_boot() - last_ping < 80e9
+                          ? ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, good_color}
+                          : ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, danger_color};
+    }
+  } catch (const std::exception& e) {
+    LOGW("Error getting connect status: %s", e.what());
+    connectStatus = ItemStatus{{tr("CPU"), tr("ERR")}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
@@ -142,12 +147,17 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
-  std::string car_cpu_status = Params().get("CarCpuStatus");
   QString core_disp;
-  if (car_cpu_status.empty()) {
-    core_disp = "Wait...";
-  } else {
-    core_disp = QString::fromStdString(car_cpu_status);
+  try {
+    std::string car_cpu_status = Params().get("CarCpuStatus");
+    if (car_cpu_status.empty()) {
+      core_disp = "Wait...";
+    } else {
+      core_disp = QString::fromStdString(car_cpu_status);
+    }
+  } catch (const std::exception& e) {
+    LOGW("Error getting CarCpuStatus: %s", e.what());
+    core_disp = "ERR";
   }
 
   ItemStatus pandaStatus = {{tr("CORE"), core_disp.toUtf8().data()}, good_color};
