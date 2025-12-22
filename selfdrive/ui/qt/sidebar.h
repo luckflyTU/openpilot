@@ -61,7 +61,6 @@ protected:
   int cpu_usage = 0;
   uint64_t last_cpu_idle = 0;
   uint64_t last_cpu_total = 0;
-  int frame_count = 0;
 
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
