@@ -330,13 +330,13 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
     int base_x = surface_rect.center().x();
-    int base_y = 680;
+    int base_y = 780;
     int line_spacing = 70;
 
     p.setFont(InterFont(60));
 
     // Draw core status
-    drawText(p, base_x, base_y, core_status_str, 200);
+    //drawText(p, base_x, base_y, core_status_str, 200);
 
     // Draw CPU usage per core
     QStringList cpu_list;
