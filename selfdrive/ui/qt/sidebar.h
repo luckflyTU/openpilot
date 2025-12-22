@@ -1,74 +1,103 @@
 #pragma once
 
-#include <memory>
-
-#include <QFrame>
-#include <QMap>
-
+#include <QPainter>
+#include <vector>
 #include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/network/networking.h"
+#include "selfdrive/ui/qt/offroad/speed_limit/helpers.h"
 
-typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
-Q_DECLARE_METATYPE(ItemStatus);
+constexpr int SPEED_LIMIT_AHEAD_VALID_FRAME_THRESHOLD = 5;
 
-class Sidebar : public QFrame {
+class HudRenderer : public QObject {
   Q_OBJECT
-  Q_PROPERTY(ItemStatus connectStatus MEMBER connect_status NOTIFY valueChanged);
-  Q_PROPERTY(ItemStatus pandaStatus MEMBER panda_status NOTIFY valueChanged);
-  Q_PROPERTY(ItemStatus tempStatus MEMBER temp_status NOTIFY valueChanged);
-  Q_PROPERTY(QString netType MEMBER net_type NOTIFY valueChanged);
-  Q_PROPERTY(int netStrength MEMBER net_strength NOTIFY valueChanged);
-  Q_PROPERTY(bool recordingAudio MEMBER recording_audio NOTIFY valueChanged);
-  Q_PROPERTY(QString wifiAddr MEMBER wifi_addr NOTIFY valueChanged);
 
 public:
-  explicit Sidebar(QWidget* parent = 0);
-
-signals:
-  void openSettings(int index = 0, const QString &param = "");
-  void valueChanged();
-
-public slots:
-  void offroadTransition(bool offroad);
+  HudRenderer();
   void updateState(const UIState &s);
-
-protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y);
-
-  QPixmap home_img, flag_img, settings_img, mic_img, link_img;
-  bool onroad, recording_audio, flag_pressed, settings_pressed, mic_indicator_pressed;
-  const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
-    {cereal::DeviceState::NetworkType::NONE, tr("--")},
-    {cereal::DeviceState::NetworkType::WIFI, tr("Wi-Fi")},
-    {cereal::DeviceState::NetworkType::ETHERNET, tr("ETH")},
-    {cereal::DeviceState::NetworkType::CELL2_G, tr("2G")},
-    {cereal::DeviceState::NetworkType::CELL3_G, tr("3G")},
-    {cereal::DeviceState::NetworkType::CELL4_G, tr("LTE")},
-    {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
-  };
-
-  const QRect home_btn = QRect(60, 860, 180, 180);
-  const QRect settings_btn = QRect(50, 35, 200, 117);
-  const QRect mic_indicator_btn = QRect(158, 252, 75, 40);
-  const QColor good_color = QColor(255, 255, 255);
-  const QColor warning_color = QColor(218, 202, 37);
-  const QColor danger_color = QColor(201, 34, 49);
-
-  int frame_count = 0;
-  int cpu_usage = 0;
-  uint64_t last_cpu_idle = 0;
-  uint64_t last_cpu_total = 0;
-  int frame_count = 0;
-
-  ItemStatus connect_status, panda_status, temp_status;
-  QString net_type;
-  int net_strength = 0;
-  QString wifi_addr = "--";
+  void draw(QPainter &p, const QRect &surface_rect);
 
 private:
-  std::unique_ptr<PubMaster> pm;
-  Networking *networking = nullptr;
+  void drawSetSpeed(QPainter &p, const QRect &surface_rect);
+  void drawCurrentSpeed(QPainter &p, const QRect &surface_rect);
+  void drawCpuStatus(QPainter &p, const QRect &surface_rect);
+  void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+
+  void drawIcon(QPainter &p, QPoint pos, const QPixmap &img, QColor bg_color = QColor(0,0,0,0), qreal opacity = 1.0);
+  void drawDrivingPersonalities(QPainter &p, const QRect &rect);
+  void drawTimSignals(QPainter &p, const QRect &rect);
+  void drawSpeedLimitSigns(QPainter &p, QRect &sign_rect);
+  void drawUpcomingSpeedLimit(QPainter &p);
+  void drawSpeedLimitPreActiveArrow(QPainter &p, QRect &sign_rect);
+
+  bool pulseElement(int frame);
+  void drawSmartCruiseControlOnroadIcon(QPainter &p, const QRect &surface_rect, int x_offset, int y_offset, std::string name);
+
+  QString road_name;
+  void drawRoadName(QPainter &p, const QRect &surface_rect);
+
+  static constexpr int btn_size = 250;
+  static constexpr int UI_BORDER_SIZE = 15;
+  static constexpr int bdr_s = 30;
+  static constexpr int footer_h = 60;
+
+  float speed = 0;
+  float set_speed = 0;
+  bool is_cruise_set = false;
+  bool is_cruise_available = true;
+  bool is_metric = false;
+  bool v_ego_cluster_seen = false;
+  bool brakeLights = false;
+  int status = STATUS_DISENGAGED;
+
+  QVector<QString> cpu_usage_per_core;
+  std::vector<uint64_t> prev_cpu_total;
+  std::vector<uint64_t> prev_cpu_idle;
+  QString core_status_str;
+  int frame_count = 0;
+
+  bool longOverride;
+  bool smartCruiseControlVisionEnabled;
+  bool smartCruiseControlVisionActive;
+  int smartCruiseControlVisionFrame;
+  bool smartCruiseControlMapEnabled;
+  bool smartCruiseControlMapActive;
+  int smartCruiseControlMapFrame;
+
+  float speedLimit;
+  float speedLimitLast;
+  float speedLimitOffset;
+  bool speedLimitValid;
+  bool speedLimitLastValid;
+  float speedLimitFinalLast;
+  cereal::LongitudinalPlanTOP::SpeedLimit::Source speedLimitSource;
+  bool speedLimitAheadValid;
+  float speedLimitAhead;
+  float speedLimitAheadDistance;
+  float speedLimitAheadDistancePrev;
+  int speedLimitAheadValidFrame;
+  SpeedLimitMode speedLimitMode = SpeedLimitMode::OFF;
+  cereal::LongitudinalPlanTOP::SpeedLimit::AssistState speedLimitAssistState;
+  bool speedLimitAssistActive;
+  int speedLimitAssistFrame;
+  QPixmap plus_arrow_up_img;
+  QPixmap minus_arrow_down_img;
+
+  bool blindSpotLeft = false;
+  bool blindSpotRight = false;
+  bool drivingPersonalitiesUIWheel = false;
+  bool timSignals = false;
+  bool hideBottomIcons = false;
+  bool turnSignalLeft = false;
+  bool turnSignalRight = false;
+  bool rightHandDM = false;
+  int personalityProfile = 0;
+  int animationFrameIndex = 0;
+  static constexpr int totalFrames = 4;
+  QVector<std::pair<QPixmap, QString>> profile_data;
+  std::vector<QPixmap> signalImgVector;
+
+  QTimer *animation_timer = nullptr;
+
+  inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
+  inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
+  inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
 };
