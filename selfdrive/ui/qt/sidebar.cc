@@ -4,8 +4,8 @@
 #include <QTextStream>
 
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/common/params.h"
-#include "common/swaglog.h"
+#include "../../../common/params.h"
+#include "../../../common/swaglog.h"
 
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
   const QRect rect = {30, y, 240, 126};
