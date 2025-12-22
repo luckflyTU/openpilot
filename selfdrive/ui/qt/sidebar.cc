@@ -3,6 +3,8 @@
 #include <QMouseEvent>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/common/params.h"
+#include "common/swaglog.h"
 
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
   const QRect rect = {30, y, 240, 126};
@@ -90,14 +92,41 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
   setProperty("wifiAddr", deviceState.getWifiIpAddress().cStr());
 
+  // Calculate CPU usage
+  frame_count++;
+  if (frame_count >= 30) {
+    try {
+      uint64_t cpu_idle = 0;
+      uint64_t cpu_total = 0;
+      for (auto const& c : deviceState.getCpuTimes()) {
+        cpu_idle += c.getIdle();
+        cpu_total += c.getUser() + c.getNice() + c.getSystem() + c.getIdle() + c.getIowait() + c.getIrq() + c.getSoftirq();
+      }
+
+      if (last_cpu_total > 0) {
+        uint64_t delta_idle = cpu_idle - last_cpu_idle;
+        uint64_t delta_total = cpu_total - last_cpu_total;
+        if (delta_total > 0) {
+          cpu_usage = (1.0 - (double)delta_idle / (double)delta_total) * 100;
+        }
+      }
+      last_cpu_idle = cpu_idle;
+      last_cpu_total = cpu_total;
+    } catch (const std::exception& e) {
+      LOGW("Error calculating CPU usage: %s", e.what());
+    }
+    frame_count = 0;
+  }
+
+  QString cpu_disp = QString::number(cpu_usage) + "%";
   ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    connectStatus = ItemStatus{{tr("CONNECT"), tr("OFFLINE")}, warning_color};
+    connectStatus = ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, warning_color};
   } else {
     connectStatus = nanos_since_boot() - last_ping < 80e9
-                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color}
-                        : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
+                        ? ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, good_color}
+                        : ItemStatus{{tr("CPU"), cpu_disp.toUtf8().data()}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
@@ -113,7 +142,15 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
-  ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
+  std::string car_cpu_status = Params().get("CarCpuStatus");
+  QString core_disp;
+  if (car_cpu_status.empty()) {
+    core_disp = "Wait...";
+  } else {
+    core_disp = QString::fromStdString(car_cpu_status);
+  }
+
+  ItemStatus pandaStatus = {{tr("CORE"), core_disp.toUtf8().data()}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
   }
