@@ -123,29 +123,56 @@ void HudRenderer::updateState(const UIState &s) {
   frame_count++;
   if (frame_count >= 30) {
     try {
-      auto deviceState = sm["deviceState"].getDeviceState();
-      cpu_usage_per_core.clear();
-      int i = 0;
-      for (auto const& c : deviceState.getCpuTimes()) {
-        if (i >= prev_cpu_total.size()) {
-          prev_cpu_total.push_back(0);
-          prev_cpu_idle.push_back(0);
-        }
-        uint64_t total = c.getUser() + c.getNice() + c.getSystem() + c.getIdle() + c.getIowait() + c.getIrq() + c.getSoftirq();
-        uint64_t idle = c.getIdle();
+      // CPU Usage per core
+      QFile file("/proc/stat");
+      if (file.open(QIODevice::ReadOnly)) {
+        QTextStream in(&file);
+        cpu_usage_per_core.clear();
+        int core_index = 0;
+        while (!in.atEnd()) {
+          QString line = in.readLine();
+          if (line.startsWith("cpu")) {
+            if (line.startsWith("cpu ")) { // Skip aggregate CPU line
+              continue;
+            }
+            QStringList list = line.split(' ', Qt::SkipEmptyParts);
+            if (list.size() > 7) {
+              long user = list[1].toLong();
+              long nice = list[2].toLong();
+              long system = list[3].toLong();
+              long idle = list[4].toLong();
+              long iowait = list[5].toLong();
+              long irq = list[6].toLong();
+              long softirq = list[7].toLong();
 
-        uint64_t total_diff = total - prev_cpu_total[i];
-        uint64_t idle_diff = idle - prev_cpu_idle[i];
+              long total = user + nice + system + idle + iowait + irq + softirq;
 
-        if (total_diff > 0) {
-          float usage = (1.0 - (float)idle_diff / total_diff) * 100.0;
-          cpu_usage_per_core.append(QString("%1%").arg(usage, 0, 'f', 0));
-        } else {
-          cpu_usage_per_core.append("N/A");
+              if (core_index >= prev_cpu_total.size()) {
+                prev_cpu_total.append(0);
+                prev_cpu_idle.append(0);
+              }
+
+              long total_diff = total - prev_cpu_total[core_index];
+              long idle_diff = idle - prev_cpu_idle[core_index];
+
+              if (total_diff > 0) {
+                float usage = (1.0 - (float)idle_diff / total_diff) * 100.0;
+                cpu_usage_per_core.append(QString("%1%").arg(usage, 0, 'f', 0));
+              } else {
+                cpu_usage_per_core.append("N/A");
+              }
+
+              prev_cpu_total[core_index] = total;
+              prev_cpu_idle[core_index] = idle;
+              core_index++;
+            }
+          } else {
+            break; // No more CPU lines
+          }
         }
-        prev_cpu_total[i] = total;
-        prev_cpu_idle[i] = idle;
-        i++;
+        file.close();
+      } else {
+        cpu_usage_per_core.clear();
       }
     } catch (const std::exception& e) {
       cpu_usage_per_core.clear();
