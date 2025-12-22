@@ -331,7 +331,7 @@ class Car:
       t.join()
 
 
-def _choose_ctrl_cores(preferred=(0, 1, 2)):
+def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
   """Return either an int or a list of cores that exist on this device,
      filtered from the preferred tuple."""
   try:
@@ -347,7 +347,7 @@ def _choose_ctrl_cores(preferred=(0, 1, 2)):
 
 def main():
   # Choose robust cores for control (favor LITTLE cores on big.LITTLE SoCs like SD845)
-  cores = _choose_ctrl_cores(preferred=(0, 1, 2))
+  cores = _choose_ctrl_cores(preferred=(0, 1, 2, 3))
 
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
