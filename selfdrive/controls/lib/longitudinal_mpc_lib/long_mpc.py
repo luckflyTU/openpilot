@@ -79,11 +79,11 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 1.8
   elif personality==log.LongitudinalPersonality.standard:
-    #return 1.4
-    return 1
+    return 1.4
+    #return 1
   elif personality==log.LongitudinalPersonality.aggressive:
-    #return 0.95
-    return 0.65
+    return 0.95
+    #return 0.65
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
