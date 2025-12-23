@@ -121,6 +121,39 @@ void Sidebar::updateState(const UIState &s) {
             last_cpu_idle = idle;
           }
         }
+
+        // Calculate CPU usage per core
+        int i = 0;
+        while (!in.atEnd()) {
+          line = in.readLine();
+          if (line.startsWith("cpu" + QString::number(i))) {
+            if (cpu_core_usages.size() <= i) {
+              cpu_core_usages.resize(i + 1);
+              last_cpu_core_totals.resize(i + 1, 0);
+              last_cpu_core_idles.resize(i + 1, 0);
+            }
+            QStringList list = line.split(' ', QString::SkipEmptyParts);
+            if (list.size() > 4) {
+              uint64_t user = list[1].toULongLong();
+              uint64_t nice = list[2].toULongLong();
+              uint64_t system = list[3].toULongLong();
+              uint64_t idle = list[4].toULongLong();
+              uint64_t total = user + nice + system + idle;
+              if (last_cpu_core_totals[i] > 0) {
+                uint64_t total_diff = total - last_cpu_core_totals[i];
+                uint64_t idle_diff = idle - last_cpu_core_idles[i];
+                if (total_diff > 0) {
+                  cpu_core_usages[i] = (1.0 - (double)idle_diff / total_diff) * 100;
+                }
+              }
+              last_cpu_core_totals[i] = total;
+              last_cpu_core_idles[i] = idle;
+            }
+            i++;
+          } else {
+            break;
+          }
+        }
         file.close();
       }
     } catch (const std::exception& e) {
@@ -146,6 +179,7 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
+  /* TEMP 顯示 getMaxTempC
   int temp = (int)deviceState.getMaxTempC();
   QString good_disp = QString::number(temp) + "°C";
   ItemStatus tempStatus = {{tr("TEMP"), good_disp.toUtf8().data()}, danger_color};
@@ -155,6 +189,39 @@ void Sidebar::updateState(const UIState &s) {
     //tempStatus = {{tr("TEMP"), tr("GOOD")}, good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
     tempStatus = {{tr("TEMP"), good_disp.toUtf8().data()}, warning_color};
+  }
+  setProperty("tempStatus", QVariant::fromValue(tempStatus));
+  */
+
+  QString core_disp1;
+  QString core_disp2;
+  if (!cpu_core_usages.empty()) {
+    QStringList usages1;
+    QStringList usages2;
+    const int half_size = cpu_core_usages.size() / 2;
+    for (int i = 0; i < cpu_core_usages.size(); ++i) {
+      const auto& usage = cpu_core_usages[i];
+      if (i < half_size) {
+        usages1 << QString::number(qRound(usage)) + "%";
+      } else {
+        usages2 << QString::number(qRound(usage)) + "%";
+      }
+    }
+    core_disp1 = usages1.join(" ");
+    core_disp2 = usages2.join(" ");
+  } else {
+    core_disp1 = "Wait...";
+    core_disp2 = "Wait...";
+  }
+
+  int temp = (int)deviceState.getMaxTempC();
+  QString good_disp = QString::number(temp) + "°C";
+  ItemStatus tempStatus = {{core_disp1.toUtf8().data(), core_disp2.toUtf8().data()}, danger_color};
+  auto ts = deviceState.getThermalStatus();
+  if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
+    tempStatus = {{core_disp1.toUtf8().data(), core_disp2.toUtf8().data()}, good_color};
+  } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
+    tempStatus = {{core_disp1.toUtf8().data(), core_disp2.toUtf8().data()}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
