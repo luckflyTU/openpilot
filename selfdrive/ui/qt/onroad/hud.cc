@@ -119,6 +119,7 @@ void HudRenderer::updateState(const UIState &s) {
     road_name = QString::fromStdString(live_map_data.getRoadName());
   }
 
+  /*
   // Update CPU usage and core status
   frame_count++;
   if (frame_count >= 30) {
@@ -191,6 +192,7 @@ void HudRenderer::updateState(const UIState &s) {
     }
     frame_count = 0;
   }
+  */
 }
 
 void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
@@ -338,6 +340,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     // Draw core status
     //drawText(p, base_x, base_y, core_status_str, 200);
 
+    /*
     // Draw CPU usage per core
     QStringList cpu_list;
     for(const QString &s : cpu_usage_per_core) {
@@ -345,6 +348,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     }
     QString cpu_usage_text = "CPU: " + cpu_list.join(" ");
     drawText(p, base_x, base_y + line_spacing, cpu_usage_text, 200);
+    */
 
   } catch (const std::exception& e) {
     // In case of any standard C++ exception, log it (optional)
