@@ -63,10 +63,6 @@ protected:
   uint64_t last_cpu_idle = 0;
   uint64_t last_cpu_total = 0;
 
-  QVector<double> cpu_core_usages;
-  QVector<uint64_t> last_cpu_core_totals;
-  QVector<uint64_t> last_cpu_core_idles;
-
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;

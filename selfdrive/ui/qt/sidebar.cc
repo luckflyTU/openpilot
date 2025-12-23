@@ -122,6 +122,7 @@ void Sidebar::updateState(const UIState &s) {
           }
         }
 
+        /*
         // Calculate CPU usage per core
         int i = 0;
         while (!in.atEnd()) {
@@ -154,6 +155,7 @@ void Sidebar::updateState(const UIState &s) {
             break;
           }
         }
+        */
         file.close();
       }
     } catch (const std::exception& e) {
@@ -179,7 +181,7 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  /* TEMP 顯示 getMaxTempC
+  /* TEMP 顯示 getMaxTempC */
   int temp = (int)deviceState.getMaxTempC();
   QString good_disp = QString::number(temp) + "°C";
   ItemStatus tempStatus = {{tr("TEMP"), good_disp.toUtf8().data()}, danger_color};
@@ -191,8 +193,8 @@ void Sidebar::updateState(const UIState &s) {
     tempStatus = {{tr("TEMP"), good_disp.toUtf8().data()}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
-  */
 
+  /*
   QString core_disp1;
   QString core_disp2;
   if (!cpu_core_usages.empty()) {
@@ -224,6 +226,7 @@ void Sidebar::updateState(const UIState &s) {
     tempStatus = {{core_disp1.toUtf8().data(), core_disp2.toUtf8().data()}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
+  */
 
   QString core_disp;
   try {
