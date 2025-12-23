@@ -129,8 +129,8 @@ void Sidebar::updateState(const UIState &s) {
           if (line.startsWith("cpu" + QString::number(i))) {
             if (cpu_core_usages.size() <= i) {
               cpu_core_usages.resize(i + 1);
-              last_cpu_core_totals.resize(i + 1, 0);
-              last_cpu_core_idles.resize(i + 1, 0);
+              last_cpu_core_totals.resize(i + 1);
+              last_cpu_core_idles.resize(i + 1);
             }
             QStringList list = line.split(' ', QString::SkipEmptyParts);
             if (list.size() > 4) {
