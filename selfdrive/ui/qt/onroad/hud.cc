@@ -119,80 +119,54 @@ void HudRenderer::updateState(const UIState &s) {
     road_name = QString::fromStdString(live_map_data.getRoadName());
   }
 
-  /*
-  // Update CPU usage and core status
+  // Calculate CPU usage
   frame_count++;
   if (frame_count >= 30) {
     try {
-      // CPU Usage per core
       QFile file("/proc/stat");
       if (file.open(QIODevice::ReadOnly)) {
         QTextStream in(&file);
-        cpu_usage_per_core.clear();
-        int core_index = 0;
+        in.readLine();  // Skip the first line which is for total CPU usage
+
+        // Calculate CPU usage per core
+        int i = 0;
         while (!in.atEnd()) {
           QString line = in.readLine();
-          if (line.startsWith("cpu")) {
-            if (line.startsWith("cpu ")) { // Skip aggregate CPU line
-              continue;
+          if (line.startsWith("cpu" + QString::number(i))) {
+            if (cpu_core_usages.size() <= i) {
+              cpu_core_usages.resize(i + 1);
+              last_cpu_core_totals.resize(i + 1);
+              last_cpu_core_idles.resize(i + 1);
             }
             QStringList list = line.split(' ', QString::SkipEmptyParts);
-            if (list.size() > 7) {
-              long user = list[1].toLong();
-              long nice = list[2].toLong();
-              long system = list[3].toLong();
-              long idle = list[4].toLong();
-              long iowait = list[5].toLong();
-              long irq = list[6].toLong();
-              long softirq = list[7].toLong();
-
-              long total = user + nice + system + idle + iowait + irq + softirq;
-
-              if (core_index >= prev_cpu_total.size()) {
-                prev_cpu_total.append(0);
-                prev_cpu_idle.append(0);
+            if (list.size() > 4) {
+              uint64_t user = list[1].toULongLong();
+              uint64_t nice = list[2].toULongLong();
+              uint64_t system = list[3].toULongLong();
+              uint64_t idle = list[4].toULongLong();
+              uint64_t total = user + nice + system + idle;
+              if (last_cpu_core_totals[i] > 0) {
+                uint64_t total_diff = total - last_cpu_core_totals[i];
+                uint64_t idle_diff = idle - last_cpu_core_idles[i];
+                if (total_diff > 0) {
+                  cpu_core_usages[i] = (1.0 - (double)idle_diff / total_diff) * 100;
+                }
               }
-
-              long total_diff = total - prev_cpu_total[core_index];
-              long idle_diff = idle - prev_cpu_idle[core_index];
-
-              if (total_diff > 0) {
-                float usage = (1.0 - (float)idle_diff / total_diff) * 100.0;
-                cpu_usage_per_core.append(QString("%1%").arg(usage, 0, 'f', 0));
-              } else {
-                cpu_usage_per_core.append("N/A");
-              }
-
-              prev_cpu_total[core_index] = total;
-              prev_cpu_idle[core_index] = idle;
-              core_index++;
+              last_cpu_core_totals[i] = total;
+              last_cpu_core_idles[i] = idle;
             }
+            i++;
           } else {
-            break; // No more CPU lines
+            break;
           }
         }
         file.close();
-      } else {
-        cpu_usage_per_core.clear();
       }
     } catch (const std::exception& e) {
-      cpu_usage_per_core.clear();
-    }
-
-    try {
-      // Core Status from Params
-      std::string status_str = Params().get("CarCpuStatus");
-      if (!status_str.empty()) {
-          core_status_str = QString("Cores: %1").arg(QString::fromStdString(status_str));
-      } else {
-          core_status_str = "Cores: Wait...";
-      }
-    } catch (const std::exception& e) {
-      core_status_str.clear();
+      //LOGW("Error calculating CPU usage: %s", e.what());
     }
     frame_count = 0;
   }
-  */
 }
 
 void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
@@ -264,7 +238,7 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
     }
   }
   drawCurrentSpeed(p, surface_rect);
-  //drawCpuStatus(p, surface_rect);
+  drawCpuStatus(p, surface_rect);
 
   if (drivingPersonalitiesUIWheel && !hideBottomIcons) {
     drawDrivingPersonalities(p, surface_rect);
@@ -331,27 +305,37 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
-    /*
-    暫且不執行 CPU 狀態繪製
     int base_x = surface_rect.center().x();
-    int base_y = 780;
-    int line_spacing = 70;
+    int base_y = 850;
+    int line_spacing = 50;
 
-    p.setFont(InterFont(60));
-    */
+    p.setFont(InterFont(45));
 
-    // Draw core status
-    //drawText(p, base_x, base_y, core_status_str, 200);
-
-    /*
-    // Draw CPU usage per core
-    QStringList cpu_list;
-    for(const QString &s : cpu_usage_per_core) {
-      cpu_list.append(s);
+    QString core_disp1;
+    QString core_disp2;
+    if (!cpu_core_usages.empty()) {
+        QStringList usages1;
+        QStringList usages2;
+        const int half_size = cpu_core_usages.size() / 2;
+        for (int i = 0; i < cpu_core_usages.size(); ++i) {
+            const auto& usage = cpu_core_usages[i];
+            if (i < half_size) {
+                usages1 << QString::number(qRound(usage)) + "%";
+            } else {
+                usages2 << QString::number(qRound(usage)) + "%";
+            }
+        }
+        core_disp1 = usages1.join(" ");
+        core_disp2 = usages2.join(" ");
+    } else {
+        core_disp1 = "CPU Wait...";
+        core_disp2 = "";
     }
-    QString cpu_usage_text = "CPU: " + cpu_list.join(" ");
-    drawText(p, base_x, base_y + line_spacing, cpu_usage_text, 200);
-    */
+
+    drawText(p, base_x, base_y, core_disp1, 200);
+    if (!core_disp2.isEmpty()) {
+        drawText(p, base_x, base_y + line_spacing, core_disp2, 200);
+    }
 
   } catch (const std::exception& e) {
     // In case of any standard C++ exception, log it (optional)

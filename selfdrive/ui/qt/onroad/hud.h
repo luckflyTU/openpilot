@@ -47,11 +47,10 @@ private:
   bool brakeLights = false;
   int status = STATUS_DISENGAGED;
 
-  //QVector<QString> cpu_usage_per_core;
-  //QVector<long> prev_cpu_total;
-  //QVector<long> prev_cpu_idle;
-  //QString core_status_str;
-  //int frame_count = 0;
+  int frame_count = 0;
+  QVector<double> cpu_core_usages;
+  QVector<uint64_t> last_cpu_core_totals;
+  QVector<uint64_t> last_cpu_core_idles;
 
   bool longOverride;
   bool smartCruiseControlVisionEnabled;
