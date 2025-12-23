@@ -264,7 +264,7 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
     }
   }
   drawCurrentSpeed(p, surface_rect);
-  drawCpuStatus(p, surface_rect);
+  //drawCpuStatus(p, surface_rect);
 
   if (drivingPersonalitiesUIWheel && !hideBottomIcons) {
     drawDrivingPersonalities(p, surface_rect);
