@@ -305,11 +305,11 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
-    int base_x = surface_rect.center().x();
-    int base_y = 850;
-    int line_spacing = 50;
+    int base_x = surface_rect.center().x()-250;
+    int base_y = 870;
+    int line_spacing = 70;
 
-    p.setFont(InterFont(45));
+    p.setFont(InterFont(60));
 
     QString core_disp1;
     QString core_disp2;
@@ -332,9 +332,9 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
         core_disp2 = "";
     }
 
-    drawText(p, base_x, base_y, core_disp1, 200);
+    drawText(p, base_x, base_y, core_disp1, 255);
     if (!core_disp2.isEmpty()) {
-        drawText(p, base_x, base_y + line_spacing, core_disp2, 200);
+        drawText(p, base_x, base_y + line_spacing, core_disp2, 255);
     }
 
   } catch (const std::exception& e) {
