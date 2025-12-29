@@ -324,16 +324,25 @@ class Car:
       cloudlog.warning("params_thread exit")
 
   def card_thread(self):
+    # Event object to signal params_thread when to exit
     e = threading.Event()
+    # Create thread to background update params locally
     t = threading.Thread(target=self.params_thread, args=(e, ))
     try:
+      # Announce card thread status as Running
+      self.params.put("CardThreadStatus", "Running")
       t.start()
       while True:
         self.step()
         self.rk.monitor_time()
-    except Exception as e:
-      cloudlog.exception(f"card_thread failed: {e}")
+    except Exception as exc:
+      # Log exception and update status to Error
+      self.params.put("CardThreadStatus", "Error")
+      cloudlog.exception(f"card_thread failed: {exc}")
     finally:
+      # Update status to Stopped
+      self.params.put("CardThreadStatus", "Stopped")
+      # Signal params_thread to exit and wait for it to join
       e.set()
       t.join()
       cloudlog.warning("card_thread exit")
