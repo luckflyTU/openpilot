@@ -313,10 +313,15 @@ class Car:
     self.CS_prev = CS
 
   def params_thread(self, evt):
-    while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      time.sleep(0.1)
+    try:
+      while not evt.is_set():
+        self.is_metric = self.params.get_bool("IsMetric")
+        self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+        time.sleep(0.1)
+    except Exception as e:
+      cloudlog.exception(f"params_thread failed: {e}")
+    finally:
+      cloudlog.warning("params_thread exit")
 
   def card_thread(self):
     e = threading.Event()
@@ -326,9 +331,12 @@ class Car:
       while True:
         self.step()
         self.rk.monitor_time()
+    except Exception as e:
+      cloudlog.exception(f"card_thread failed: {e}")
     finally:
       e.set()
       t.join()
+      cloudlog.warning("card_thread exit")
 
 
 def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
