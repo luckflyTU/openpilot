@@ -121,17 +121,7 @@ void HudRenderer::updateState(const UIState &s) {
 
   // Calculate CPU usage
   frame_count++;
-  if (frame_count >= 60) {
-    static Params params;
-    try {
-        std::string status = params.get("CardThreadStatus");
-        if (!status.empty()) {
-          card_thread_status = QString::fromStdString(status);
-        }
-    } catch (const std::exception& e) {
-      //LOGW("Error calculating CPU usage: %s", e.what());
-    }
-
+  if (frame_count >= 30) {
     try {
       QFile file("/proc/stat");
       if (file.open(QIODevice::ReadOnly)) {
@@ -315,27 +305,12 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
-    // Determine the position for drawing text
-    int base_x = surface_rect.center().x()-350;
-    int base_y = 870;
+    int base_x = surface_rect.center().x()-250;
+    int base_y = 850;
     int line_spacing = 70;
 
-    // Set the font size
     p.setFont(InterFont(60));
 
-    // Default color
-    QColor text_color = QColor(255, 255, 255, 255);
-
-    // Determine the text color based on the card thread status
-    if (!card_thread_status.isEmpty()) {
-       // Green if Running, Red if Error/Stopped
-       text_color = (card_thread_status == "Running") ? QColor(0, 255, 0, 255) : QColor(255, 0, 0, 255);
-    } else {
-        // Blue if status is unknown/empty
-        text_color = QColor(0, 0, 255, 255);
-    }
-
-    // Format CPU usage strings
     QString core_disp1;
     QString core_disp2;
     if (!cpu_core_usages.empty()) {
@@ -344,7 +319,6 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
         const int half_size = cpu_core_usages.size() / 2;
         for (int i = 0; i < cpu_core_usages.size(); ++i) {
             const auto& usage = cpu_core_usages[i];
-            // Split CPU cores into two lines
             if (i < half_size) {
                 usages1 << QString::number(qRound(usage)) + "%";
             } else {
@@ -358,11 +332,9 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
         core_disp2 = "";
     }
 
-    // Use default color or status color for the CPU text
-    drawText(p, base_x, base_y, core_disp1, text_color);
-    // Draw the second line if available
+    drawText(p, base_x, base_y, core_disp1);
     if (!core_disp2.isEmpty()) {
-        drawText(p, base_x, base_y + line_spacing, core_disp2, text_color);
+        drawText(p, base_x, base_y + line_spacing, core_disp2);
     }
 
   } catch (const std::exception& e) {
@@ -376,14 +348,6 @@ void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int a
   real_rect.moveCenter({x, y - real_rect.height() / 2});
 
   p.setPen(QColor(0xff, 0xff, 0xff, alpha));
-  p.drawText(real_rect.x(), real_rect.bottom(), text);
-}
-
-void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, QColor color) {
-  QRect real_rect = p.fontMetrics().boundingRect(text);
-  real_rect.moveCenter({x, y - real_rect.height() / 2});
-
-  p.setPen(color);
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
