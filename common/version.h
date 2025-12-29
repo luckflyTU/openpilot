@@ -1,1 +1,1 @@
-#define COMMA_VERSION "0.10.0.3-25-[2025.12.27](TCP Model)"
+#define COMMA_VERSION "0.10.0.3-26-[2025.12.29](TCP Model)"
