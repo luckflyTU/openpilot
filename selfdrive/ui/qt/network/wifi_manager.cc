@@ -485,12 +485,14 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-  if (!ipv4_forward) {
-    QTimer::singleShot(5000, this, [=] {
-      qWarning() << "net.ipv4.ip_forward = 0";
-      std::system("sudo sysctl net.ipv4.ip_forward=0");
-    });
-  }
+  // if (!ipv4_forward) {
+  //   QTimer::singleShot(5000, this, [=] {
+  //     qWarning() << "net.ipv4.ip_forward = 0";
+  //     std::system("sudo sysctl net.ipv4.ip_forward=0");
+  //   });
+  // }
+  // Always enable ip forwarding for tethering
+  std::system("sudo sysctl net.ipv4.ip_forward=1");
   call->deleteLater();
   tethering_on = true;
 }
