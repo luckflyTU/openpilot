@@ -333,6 +333,12 @@ class Car:
       self.params.put("CardThreadStatus", "Running")
       t.start()
       while True:
+        if not t.is_alive():
+          cloudlog.error("params_thread has died, restarting...")
+          t.join()
+          e = threading.Event()
+          t = threading.Thread(target=self.params_thread, args=(e, ))
+          t.start()
         self.step()
         self.rk.monitor_time()
     except Exception as exc:

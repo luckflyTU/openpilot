@@ -329,7 +329,11 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     // Determine the text color based on the card thread status
     if (!card_thread_status.isEmpty()) {
        // Green if Running, Red if Error/Stopped
-       text_color = (card_thread_status == "Running") ? QColor(0, 255, 0, 255) : QColor(255, 0, 0, 255);
+       if (card_thread_status == "Running") {
+         text_color = QColor(0, 255, 0, 255); // Green
+       } else {
+         text_color = QColor(255, 0, 0, 255); // Red
+       }
     } else {
         // Blue if status is unknown/empty
         text_color = QColor(0, 0, 255, 255);
