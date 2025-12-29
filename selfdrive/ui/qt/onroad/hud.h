@@ -19,6 +19,7 @@ private:
   void drawCurrentSpeed(QPainter &p, const QRect &surface_rect);
   void drawCpuStatus(QPainter &p, const QRect &surface_rect);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+  void drawText(QPainter &p, int x, int y, const QString &text, QColor color);
 
   void drawIcon(QPainter &p, QPoint pos, const QPixmap &img, QColor bg_color = QColor(0,0,0,0), qreal opacity = 1.0);
   void drawDrivingPersonalities(QPainter &p, const QRect &rect);
@@ -76,6 +77,9 @@ private:
   cereal::LongitudinalPlanTOP::SpeedLimit::AssistState speedLimitAssistState;
   bool speedLimitAssistActive;
   int speedLimitAssistFrame;
+
+  QString card_thread_status;
+
   QPixmap plus_arrow_up_img;
   QPixmap minus_arrow_down_img;
 
