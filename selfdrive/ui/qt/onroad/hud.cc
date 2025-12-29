@@ -305,7 +305,7 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
 
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
-    int base_x = surface_rect.center().x()-250;
+    int base_x = surface_rect.center().x()-350;
     int base_y = 870;
     int line_spacing = 70;
 
