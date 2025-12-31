@@ -124,9 +124,9 @@ void HudRenderer::updateState(const UIState &s) {
   if (frame_count >= 60) {
     static Params params;
     try {
-        std::string status = params.get("CardThreadStatus");
-        if (!status.empty()) {
-          card_thread_status = QString::fromStdString(status);
+        std::string card_status_str = params.get("CardThreadStatus");
+        if (!card_status_str.empty()) {
+          card_thread_status = QString::fromStdString(card_status_str);
         }
     } catch (const std::exception& e) {
       //LOGW("Error calculating CPU usage: %s", e.what());
