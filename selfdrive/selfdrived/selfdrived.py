@@ -348,6 +348,7 @@ class SelfdriveD(CruiseHelper):
       self.not_running_prev = not_running
     if self.sm.recv_frame['managerState'] and (not_running - self.ignored_processes):
       self.events.add(EventName.processNotRunning)
+      cloudlog.error(f"Process Not Running: {not_running - self.ignored_processes}")#2026/01/02
     else:
       if not SIMULATION and not self.rk.lagging:
         if not self.sm.all_alive(self.camera_packets):
