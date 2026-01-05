@@ -5,14 +5,19 @@
 #include <vector>
 
 #include <QDebug>
+#include <QStorageInfo> // 2026/01/05
 
 #include "common/watchdog.h"
 #include "common/util.h"
+#include "common/params.h" // [新增] 修正 Params() 錯誤
+#include "system/hardware/hw.h"
+#include "cereal/gen/cpp/log.capnp.h" // [新增] 修正 cereal::InitData::DeviceType 錯誤
 #include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/qt/widgets/controls.h" // [新增] 修正 ParamControl/LabelControl 錯誤
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/offroad/firehose.h"
 #include "selfdrive/ui/qt/offroad/timpilot.h"
@@ -622,6 +627,67 @@ TimpilotPanel::TimpilotPanel(QWidget* parent) : QWidget(parent) {
       background-color: #444444;
     }
   )");
+
+  // 2026/01/06 --- 新增開始: Storage Usage 邏輯 & Device Type ---
+  try {
+    bool storageFound = false;
+    for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
+      if (storage.isValid() && storage.isReady()) {
+        // 1. 過濾唯讀的檔案系統 (例如系統分區)
+        if (storage.isReadOnly()) continue;
+
+        // 2. 過濾總容量為 0 的掛載點 (避免顯示特殊虛擬裝置)
+        if (storage.bytesTotal() <= 0) continue;
+
+        // 3. 過濾常見的虛擬檔案系統類型
+        const QStringList ignored_fs = {"tmpfs", "devtmpfs", "overlay", "squashfs", "sysfs", "proc", "autofs"};
+        if (ignored_fs.contains(storage.fileSystemType())) continue;
+
+        // 計算使用量
+        double total_gb = storage.bytesTotal() / 1e9;
+        double avail_gb = storage.bytesAvailable() / 1e9;
+        double used_gb = total_gb - avail_gb;
+        int percent = static_cast<int>((used_gb / total_gb) * 100.0);
+        
+        QString storage_info = QString("%1% (%2 GB / %3 GB)")
+                        .arg(percent)
+                        .arg(QString::number(used_gb, 'f', 1))
+                        .arg(QString::number(total_gb, 'f', 1));
+        
+        // 顯示標題: 掛載點 (裝置路徑)
+        QString label = QString("%1 (%2)").arg(storage.rootPath()).arg(storage.device());
+        
+        toggle_layout->addWidget(new LabelControl(label, storage_info));
+        storageFound = true;
+      }
+    }
+
+    // 若未發現任何符合條件的儲存裝置
+    if (!storageFound) {
+      toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("None")));
+    }
+  } catch (std::exception &e) {
+    qWarning() << "Failed to get storage info:" << e.what();
+    toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("Error")));
+  } catch (...) {
+    qWarning() << "Failed to get storage info: Unknown error";
+    toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("Error")));
+  }
+
+  // 判斷並顯示裝置類型
+  try {
+    QString device_type = "other";
+    if (Hardware::get_device_type() == cereal::InitData::DeviceType::TICI) {
+      device_type = "tici";
+    }
+    toggle_layout->addWidget(new LabelControl(tr("Device Type"), device_type));
+  } catch (std::exception &e) {
+    qWarning() << "Failed to get device type:" << e.what();
+    toggle_layout->addWidget(new LabelControl(tr("Device Type"), tr("Unknown")));
+  }
+
+  toggle_layout->addWidget(horizontal_line());
+  // 2026/01/06 --- 新增結束 ---
 
   QList<ParamControl*> toggles;
 

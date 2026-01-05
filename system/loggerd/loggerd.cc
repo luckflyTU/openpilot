@@ -275,57 +275,74 @@ void loggerd_thread() {
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
+  
   while (!do_exit) {
-    // poll for new messages on all sockets
-    for (auto sock : poller->poll(1000)) {
-      if (do_exit) break;
+    try {  // <--- 開始攔截區域 (1)
+        // poll for new messages on all sockets
+        for (auto sock : poller->poll(1000)) {
+          if (do_exit) break;
 
-      ServiceState &service = service_state[sock];
-      if (service.preserve_segment) {
-        handle_preserve_segment(&s);
-      }
+          ServiceState &service = service_state[sock];
+          if (service.preserve_segment) {
+            handle_preserve_segment(&s);
+          }
 
-      // drain socket
-      int count = 0;
-      Message *msg = nullptr;
-      while (!do_exit && (msg = sock->receive(true))) {
-        const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
+          // drain socket
+          int count = 0;
+          Message *msg = nullptr;
+          while (!do_exit && (msg = sock->receive(true))) {
+            const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
 
-        if (service.record_audio) {
-          capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
-          auto event = cmsg.getRoot<cereal::Event>();
-          auto audio_data = event.getRawAudioData().getData();
-          auto sample_rate = event.getRawAudioData().getSampleRate();
-          for (auto* encoder : encoders_with_audio) {
-            if (encoder && encoder->writer) {
-              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000, sample_rate);
-              encoder->audio_initialized = true;
+            try { // <--- 針對訊息處理的更詳細攔截 (2) - 這樣處理壞訊息不會中斷整個 poller 迴圈
+                if (service.record_audio) {
+                  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
+                  auto event = cmsg.getRoot<cereal::Event>();
+                  auto audio_data = event.getRawAudioData().getData();
+                  auto sample_rate = event.getRawAudioData().getSampleRate();
+                  for (auto* encoder : encoders_with_audio) {
+                    if (encoder && encoder->writer) {
+                      encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000, sample_rate);
+                      encoder->audio_initialized = true;
+                    }
+                  }
+                }
+
+                if (service.encoder) {
+                  s.last_camera_seen_tms = millis_since_boot();
+                  bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
+                } else {
+                  s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+                  bytes_count += msg->getSize();
+                  delete msg;
+                }
+            } catch (const std::exception& e) {
+                LOGE("Exception in message handling for %s: %s", service.name.c_str(), e.what());
+                if (msg) delete msg; // 確保發生例外時記憶體仍被釋放
+            } catch (...) {
+                LOGE("Unknown exception in message handling for %s", service.name.c_str());
+                if (msg) delete msg;
+            }
+
+            rotate_if_needed(&s);
+
+            if ((++msg_count % 10000) == 0) {
+              double seconds = (millis_since_boot() - start_ts) / 1000.0;
+              LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
+            }
+
+            count++;
+            if (count >= 200) {
+              LOGD("large volume of '%s' messages", service.name.c_str());
+              break;
             }
           }
         }
-
-        if (service.encoder) {
-          s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
-        } else {
-          s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
-          bytes_count += msg->getSize();
-          delete msg;
-        }
-
-        rotate_if_needed(&s);
-
-        if ((++msg_count % 10000) == 0) {
-          double seconds = (millis_since_boot() - start_ts) / 1000.0;
-          LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
-        }
-
-        count++;
-        if (count >= 200) {
-          LOGD("large volume of '%s' messages", service.name.c_str());
-          break;
-        }
-      }
+    } catch (const std::exception& e) { // <--- 攔截迴圈 (1) 的結尾
+        LOGE("Exception in loggerd main loop: %s", e.what());
+        util::sleep_for(100); // 發生嚴重錯誤時稍作暫停，避免 busy loop 瘋狂刷錯誤 log
+    } catch (...) {
+        LOGE("Unknown exception in loggerd main loop");
+        util::sleep_for(100);
     }
   }
 

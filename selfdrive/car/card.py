@@ -379,7 +379,8 @@ def main():
     # sched_setaffinity invalid-argument often indicates an out-of-range core index
     cloudlog.warning("config_realtime_process(%s, CTRL_HIGH) failed: %s. Falling back to core 0.", cores, e)
     try:
-      config_realtime_process(4, Priority.CTRL_HIGH)
+      #config_realtime_process(4, Priority.CTRL_HIGH)
+      config_realtime_process(6, Priority.CTRL_HIGH) #2026/01/05 6 使用率較低
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
 
