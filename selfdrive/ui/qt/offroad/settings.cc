@@ -655,7 +655,7 @@ TimpilotPanel::TimpilotPanel(QWidget* parent) : QWidget(parent) {
                         .arg(QString::number(total_gb, 'f', 1));
         
         // 顯示標題: 掛載點 (裝置路徑)
-        QString label = QString("%1 (%2)").arg(storage.rootPath()).arg(storage.device());
+        QString label = QString("%1 (%2)").arg(storage.rootPath()).arg(QString(storage.device()));
         
         toggle_layout->addWidget(new LabelControl(label, storage_info));
         storageFound = true;
