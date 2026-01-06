@@ -106,6 +106,7 @@ ForceCarRecognition::ForceCarRecognition(QWidget* parent): QWidget(parent) {
   list->setCurrentRow(0);
 
   QString set = QString::fromStdString(Params().get("CarModel"));
+  set = "TOYOTA_PRIUS";//2026/01/06 強制指定
 
   int index = 0;
   for (QString item : items) {
