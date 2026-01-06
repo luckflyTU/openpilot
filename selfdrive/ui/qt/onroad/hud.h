@@ -92,6 +92,10 @@ private:
   bool turnSignalRight = false;
   bool rightHandDM = false;
   int personalityProfile = 0;
+  
+  // 添加這個變量來存儲雷達狀態
+  bool leadOneRadar = false; 
+
   int animationFrameIndex = 0;
   static constexpr int totalFrames = 4;
   QVector<std::pair<QPixmap, QString>> profile_data;

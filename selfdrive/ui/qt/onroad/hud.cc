@@ -69,6 +69,15 @@ void HudRenderer::updateState(const UIState &s) {
   const auto lp_top = sm["longitudinalPlanTOP"].getLongitudinalPlanTOP();
   const auto lmd = sm["liveMapDataTOP"].getLiveMapDataTOP();
 
+  // 更新 leadOneRadar 狀態
+  if (sm.alive("radarState")) {
+    const auto &radar_state = sm["radarState"].getRadarState();
+    const auto &lead_one = radar_state.getLeadOne();
+    leadOneRadar = lead_one.getStatus() && lead_one.getRadar();
+  } else {
+    leadOneRadar = false;
+  }
+
   float speedConv = is_metric ? MS_TO_KPH : MS_TO_MPH;
   speedLimit = lp_top.getSpeedLimit().getResolver().getSpeedLimit() * speedConv;
   speedLimitLast = lp_top.getSpeedLimit().getResolver().getSpeedLimitLast() * speedConv;
@@ -248,6 +257,14 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
     }
   }
   drawCurrentSpeed(p, surface_rect);
+  
+  // 繪製 RADAR 指示器
+  if (leadOneRadar) {
+    p.setFont(InterFont(45, QFont::Bold));
+    // 使用青色顯示，高透明度 (alpha 200)
+    drawText(p, surface_rect.center().x(), 340, "RADAR", QColor(0, 255, 255, 200));
+  }
+  
   drawCpuStatus(p, surface_rect);
 
   if (drivingPersonalitiesUIWheel && !hideBottomIcons) {
