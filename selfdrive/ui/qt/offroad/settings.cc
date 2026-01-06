@@ -892,7 +892,7 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   // 1. Aggressive Jerk Settings (反應速度)
   // 對應 Python 數值: [預設(0.6), 0.5, 0.4, 0.2]
   std::vector<QString> jerk_texts{tr("Default"), tr("0.5"), tr("0.4"), tr("0.2")};
-  toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度(Aggressive Mode Jerk)"),
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度"),
                                           tr("Set the jerk factor for Aggressive personality. Lower value means more aggressive reaction (abrupt acceleration/braking)."),
                                           "../assets/icons/speed_limit.png",
                                           jerk_texts));
@@ -900,7 +900,7 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   // 2. Aggressive Follow Settings (跟車距離 - 時間)
   // 對應 Python 數值: [預設(0.95s), 0.85s, 0.75s, 0.65s]
   std::vector<QString> follow_texts{tr("Default"), tr("0.85s"), tr("0.75s"), tr("0.65s")};
-  toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間(Aggressive Mode Follow)"),
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間"),
                                           tr("Set the follow time (seconds) for Aggressive personality. Lower value means closer following distance."),
                                           "../assets/icons/distance.png",
                                           follow_texts));
@@ -908,7 +908,7 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   // 3. Aggressive Stop Distance Settings (停止距離)
   // 對應 Python 數值: [預設(2.0m), 1.5m, 1.0m, 0.5m]
   std::vector<QString> stop_texts{tr("Default"), tr("1.5m"), tr("1.0m"), tr("0.5m")};
-  toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離(Aggressive Mode Stop Dist)"),
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離"),
                                           tr("Set the stop distance (meters) for Aggressive personality. Lower value means stopping closer to the lead car."),
                                           "../assets/icons/distance.png",
                                           stop_texts));
