@@ -39,8 +39,8 @@ X_EGO_OBSTACLE_COST = 3.
 X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
-J_EGO_COST = 5.0
-A_CHANGE_COST = 200.
+J_EGO_COST = 5.0     # 加加速度 (Jerk) 的成本，越高越舒適
+A_CHANGE_COST = 200. # 加速度變化的成本
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
@@ -59,37 +59,74 @@ FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 1.75
 # STOP_DISTANCE = 6.0
+# 定義巡航時的最大最小加速度限制
 CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 1.6
 
+
+# === 新增緩存類別以優化性能 ===
+class ParamsCache:
+  def __init__(self):
+    self.params = Params()
+    self.cache = {}
+    self.last_read = {}
+
+  def get_int(self, key, default):
+    now = time.monotonic()
+    # 每 10 秒讀取一次 Params，避免卡頓
+    if now - self.last_read.get(key, 0) > 10.0:
+      val = self.params.get(key, encoding='utf8')
+      try:
+        self.cache[key] = int(val) if val is not None else default
+      except (ValueError, TypeError):
+        self.cache[key] = default
+      self.last_read[key] = now
+    return self.cache.get(key, default)
+
+params_cache = ParamsCache()
+# ==============================
+
+
+#加減速的「積極程度」主要由 get_jerk_factor (加加速度係數) 以及 MPC 的 Cost 權重來控制。
+#數值越低反應越慢/平滑，數值越高反應越快。
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
-    return 1.0
+    return 1.0 # 係數越大，對加減速變化的懲罰越高 (越平滑但反應較慢)
   elif personality==log.LongitudinalPersonality.standard:
-    #return 1
-    return 0.7
+    #return 1.0
+    return 0.75
   elif personality==log.LongitudinalPersonality.aggressive:
-    #return 0.45
-    return 0.4
+    # 讀取自定義設定
+    mode = params_cache.get_int("AggressiveJerk", 0)
+    if mode == 1: return 0.5
+    if mode == 2: return 0.4
+    if mode == 3: return 0.2
+    # mode 0 (Default)
+    return 0.6 # 係數越小，允許更劇烈的加減速變化
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
-
+#跟車距離主要由 get_T_FOLLOW (時間間距) 和 get_STOP_DISTANCE (靜止距離) 決定，並根據駕駛模式 (Personality) 進行調整。
 def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
-    return 1.8
+    return 1.8 # 輕鬆模式：跟車距離較遠 (秒)
   elif personality==log.LongitudinalPersonality.standard:
-    return 1.4
-    #return 1
+    return 1.4 # 標準模式
   elif personality==log.LongitudinalPersonality.aggressive:
-    return 0.95
-    #return 0.65
+    # 讀取自定義設定
+    mode = params_cache.get_int("AggressiveFollow", 0)
+    if mode == 1: return 0.85
+    if mode == 2: return 0.75
+    if mode == 3: return 0.65
+    # mode 0 (Default)
+    return 0.95 # 激進模式：跟車距離較近 (秒)
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
-
+# get_dynamic_follow 函數根據車速動態調整。
 def get_dynamic_follow(v_ego, personality=log.LongitudinalPersonality.standard):
   # The Dynamic follow function is adjusted by Marc(cgw1968-5779)
+  # 根據車速 (x_vel) 對應調整距離係數 (y_dist)
   if personality==log.LongitudinalPersonality.relaxed:
     x_vel =  [0.,  6,   10., 10.01, 15., 27.7]
     y_dist = [1.2, 1.4, 1.4,  1.5, 1.65,  1.8]
@@ -103,15 +140,21 @@ def get_dynamic_follow(v_ego, personality=log.LongitudinalPersonality.standard):
     raise NotImplementedError("Dynamic Follow personality not supported")
   return np.interp(v_ego, x_vel, y_dist)
 
-
+#跟車距離主要由 get_T_FOLLOW (時間間距) 和 get_STOP_DISTANCE (靜止距離) 決定，並根據駕駛模式 (Personality) 進行調整。
 def get_STOP_DISTANCE(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
-    return 4.5
+    return 4.5 # 停止時與前車的距離 (米)
   elif personality==log.LongitudinalPersonality.standard:
-    return 4.0
-  elif personality==log.LongitudinalPersonality.aggressive:
     #return 4.0
-    return 3.0
+    return 3.5
+  elif personality==log.LongitudinalPersonality.aggressive:
+    # 讀取自定義設定
+    mode = params_cache.get_int("AggressiveStopDist", 0)
+    if mode == 1: return 1.5
+    if mode == 2: return 1.0
+    if mode == 3: return 0.5
+    # mode 0 (Default)
+    return 2.0
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
@@ -238,7 +281,7 @@ def gen_long_ocp():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR, get_STOP_DISTANCE()])
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR, get_STOP_DISTANCE()]) 
 
 
   # We put all constraint cost weights to 0 and only set them at runtime

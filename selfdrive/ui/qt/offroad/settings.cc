@@ -514,7 +514,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Firehose"), new FirehosePanel(this)},
     {tr("Developer"), new DeveloperPanel(this)},
     {tr("T.O.P"), new TimpilotPanel(this)},
-    {tr("K."), new KpilotPanel(this)},
+    {tr("K.O.P"), new KpilotPanel(this)},
     {tr("OSM"), new OsmPanel(this)},
   };
 
@@ -824,7 +824,7 @@ TimpilotPanel::TimpilotPanel(QWidget* parent) : QWidget(parent) {
 
 KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *toggle_layout = new QVBoxLayout(this);
-  toggle_layout->setSpacing(20);
+  toggle_layout->setSpacing(2);
 
     // 2026/01/06 --- 新增開始: Storage Usage 邏輯 & Device Type ---
   try {
@@ -886,4 +886,33 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
 
   toggle_layout->addWidget(horizontal_line());
   // 2026/01/06 --- 新增結束 ---
+
+  // === 新增自定義 Aggressive 設定 ===
+  
+  // 1. Aggressive Jerk Settings (反應速度)
+  // 對應 Python 數值: [預設(0.6), 0.5, 0.4, 0.2]
+  std::vector<QString> jerk_texts{tr("Default"), tr("0.5"), tr("0.4"), tr("0.2")};
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度(Aggressive Mode Jerk)"),
+                                          tr("Set the jerk factor for Aggressive personality. Lower value means more aggressive reaction (abrupt acceleration/braking)."),
+                                          "../assets/icons/speed_limit.png",
+                                          jerk_texts));
+
+  // 2. Aggressive Follow Settings (跟車距離 - 時間)
+  // 對應 Python 數值: [預設(0.95s), 0.85s, 0.75s, 0.65s]
+  std::vector<QString> follow_texts{tr("Default"), tr("0.85s"), tr("0.75s"), tr("0.65s")};
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間(Aggressive Mode Follow)"),
+                                          tr("Set the follow time (seconds) for Aggressive personality. Lower value means closer following distance."),
+                                          "../assets/icons/distance.png",
+                                          follow_texts));
+
+  // 3. Aggressive Stop Distance Settings (停止距離)
+  // 對應 Python 數值: [預設(2.0m), 1.5m, 1.0m, 0.5m]
+  std::vector<QString> stop_texts{tr("Default"), tr("1.5m"), tr("1.0m"), tr("0.5m")};
+  toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離(Aggressive Mode Stop Dist)"),
+                                          tr("Set the stop distance (meters) for Aggressive personality. Lower value means stopping closer to the lead car."),
+                                          "../assets/icons/distance.png",
+                                          stop_texts));
+
+  toggle_layout->addWidget(horizontal_line());
+  // === 結束新增 ===
 }
