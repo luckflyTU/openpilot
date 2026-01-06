@@ -123,6 +123,7 @@ private:
 
 public:
   explicit TimpilotPanel(QWidget *parent = nullptr);
+};
 
 class KpilotPanel : public QWidget {
   Q_OBJECT
