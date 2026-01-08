@@ -43,4 +43,10 @@ Tests are written using `pytest`.
 - **Persistent Parameters**: Use the `Params` class from `common.params` to store and retrieve configuration parameters that should persist across reboots. For example, `Params().put("MyNewParam", "1")` and `Params().get_bool("MyNewParam")`.
 - **UI Code**: The UI is in C++/Qt. When modifying the UI, you will be editing files under `selfdrive/ui/qt`.
 
+## Coding Standards
+
+- **C/C++ Declarations**: When adding global variables or functions in a `.cc` file, ensure they are properly declared in the corresponding `.h` file.
+- **C/C++ Includes**: Ensure that any function or type used in a C++ file has its corresponding header `#include`d at the top of the file.
+- **Python Imports**: Ensure that any function or module used in a Python file is properly imported using `import` or `from ... import` at the top of the file.
+
 By following these guidelines, you'll be able to contribute effectively to the openpilot project.
