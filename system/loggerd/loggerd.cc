@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/params.h"
+#include "common/swaglog.h" // [新增] 為了使用 cloudlog_e
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
@@ -277,7 +278,7 @@ void loggerd_thread() {
   double start_ts = millis_since_boot();
   
   while (!do_exit) {
-    try {  // <--- 開始攔截區域 (1)
+    try {
         // poll for new messages on all sockets
         for (auto sock : poller->poll(1000)) {
           if (do_exit) break;
@@ -293,7 +294,7 @@ void loggerd_thread() {
           while (!do_exit && (msg = sock->receive(true))) {
             const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
 
-            try { // <--- 針對訊息處理的更詳細攔截 (2) - 這樣處理壞訊息不會中斷整個 poller 迴圈
+            try {
                 if (service.record_audio) {
                   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
                   auto event = cmsg.getRoot<cereal::Event>();
@@ -317,9 +318,11 @@ void loggerd_thread() {
                 }
             } catch (const std::exception& e) {
                 LOGE("Exception in message handling for %s: %s", service.name.c_str(), e.what());
+                cloudlog_e("loggerd_msg_exception", "service: %s, error: %s", service.name.c_str(), e.what());
                 if (msg) delete msg; // 確保發生例外時記憶體仍被釋放
             } catch (...) {
                 LOGE("Unknown exception in message handling for %s", service.name.c_str());
+                cloudlog_e("loggerd_msg_unknown", "service: %s", service.name.c_str());
                 if (msg) delete msg;
             }
 
@@ -337,11 +340,13 @@ void loggerd_thread() {
             }
           }
         }
-    } catch (const std::exception& e) { // <--- 攔截迴圈 (1) 的結尾
+    } catch (const std::exception& e) {
         LOGE("Exception in loggerd main loop: %s", e.what());
+        cloudlog_e("loggerd_main_exception", "error: %s", e.what());
         util::sleep_for(100); // 發生嚴重錯誤時稍作暫停，避免 busy loop 瘋狂刷錯誤 log
     } catch (...) {
         LOGE("Unknown exception in loggerd main loop");
+        cloudlog_e("loggerd_main_unknown_exception", "%s", "");
         util::sleep_for(100);
     }
   }

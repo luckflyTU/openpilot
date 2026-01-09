@@ -75,10 +75,11 @@ class ParamsCache:
     now = time.monotonic()
     # 每 10 秒讀取一次 Params，避免卡頓
     if now - self.last_read.get(key, 0) > 10.0:
-      val = self.params.get(key, encoding='utf8')
       try:
+        # 修改點：移除 encoding='utf8'，並放入 try 區塊防止 UnknownKeyName 錯誤
+        val = self.params.get(key)
         self.cache[key] = int(val) if val is not None else default
-      except (ValueError, TypeError):
+      except Exception:
         self.cache[key] = default
       self.last_read[key] = now
     return self.cache.get(key, default)
