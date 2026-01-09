@@ -1,3 +1,4 @@
+@ -1,376 +1,381 @@
 #include <sys/xattr.h>
 
 #include <map>
@@ -7,7 +8,6 @@
 #include <vector>
 
 #include "common/params.h"
-#include "common/swaglog.h" // [新增] 為了使用 cloudlog_e
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
@@ -318,11 +318,9 @@ void loggerd_thread() {
                 }
             } catch (const std::exception& e) {
                 LOGE("Exception in message handling for %s: %s", service.name.c_str(), e.what());
-                cloudlog_e("loggerd_msg_exception", "service: %s, error: %s", service.name.c_str(), e.what());
-                if (msg) delete msg; // 確保發生例外時記憶體仍被釋放
+                if (msg) delete msg;
             } catch (...) {
                 LOGE("Unknown exception in message handling for %s", service.name.c_str());
-                cloudlog_e("loggerd_msg_unknown", "service: %s", service.name.c_str());
                 if (msg) delete msg;
             }
 
@@ -342,11 +340,9 @@ void loggerd_thread() {
         }
     } catch (const std::exception& e) {
         LOGE("Exception in loggerd main loop: %s", e.what());
-        cloudlog_e("loggerd_main_exception", "error: %s", e.what());
-        util::sleep_for(100); // 發生嚴重錯誤時稍作暫停，避免 busy loop 瘋狂刷錯誤 log
+        util::sleep_for(100);
     } catch (...) {
         LOGE("Unknown exception in loggerd main loop");
-        cloudlog_e("loggerd_main_unknown_exception", "%s", "");
         util::sleep_for(100);
     }
   }
