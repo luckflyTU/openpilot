@@ -304,7 +304,7 @@ def process_not_running_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   if "loggerd" in not_running:
     device_type = HARDWARE.get_device_type()
     nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
-    alert_text = f"loggerd, PNR: {msg} Type:{device_type} NVMe:{nvme_expected}"
+    alert_text = f"loggerd, PNR: {msg} NVMe:{nvme_expected}"
   else:
     alert_text = f"Process Not Running: {msg}"
 
