@@ -258,12 +258,7 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
   }
   drawCurrentSpeed(p, surface_rect);
   
-  // 繪製 RADAR 指示器
-  if (leadOneRadar) {
-    p.setFont(InterFont(45, QFont::Bold));
-    // 使用青色顯示，高透明度 (alpha 200)
-    drawText(p, surface_rect.center().x(), 340, "RADAR", QColor(0, 255, 255, 200));
-  }
+  // 已移除原本在此處繪製 RADAR 指示器的代碼，改至 drawCurrentSpeed 中變色處理
   
   drawCpuStatus(p, surface_rect);
 
@@ -324,7 +319,13 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
   QString speedStr = QString::number(std::nearbyint(speed));
 
   p.setFont(InterFont(176, QFont::Bold));
-  drawText(p, surface_rect.center().x(), 210, speedStr);
+
+  // 若偵測到 Radar Lead，改為青色 (Cyan)，否則維持白色
+  if (leadOneRadar) {
+    drawText(p, surface_rect.center().x(), 210, speedStr, QColor(0, 255, 255, 255));
+  } else {
+    drawText(p, surface_rect.center().x(), 210, speedStr); // 預設白色
+  }
 
   p.setFont(InterFont(66));
   drawText(p, surface_rect.center().x(), 290, is_metric ? tr("km/h") : tr("mph"), 200);
@@ -527,7 +528,7 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
   constexpr int signalWidth = 142;
 
   // Calculate the vertical position for the turn signals
-  const int baseYPosition = (blindSpotLeft || blindSpotRight ?
+  const int baseYPosition = (blindSpotLeft || blindSpotRight ? 
                            (rect.height() - signalHeight) / 2 : 350);
 
   // Calculate the x-coordinates for the turn signals

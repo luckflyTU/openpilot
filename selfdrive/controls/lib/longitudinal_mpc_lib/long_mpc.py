@@ -94,16 +94,16 @@ def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 1.0 # 係數越大，對加減速變化的懲罰越高 (越平滑但反應較慢)
   elif personality==log.LongitudinalPersonality.standard:
-    #return 1.0
-    return 0.75
+    return 1.0
   elif personality==log.LongitudinalPersonality.aggressive:
     # 讀取自定義設定
     mode = params_cache.get_int("AggressiveJerk", 0)
-    if mode == 1: return 0.5
-    if mode == 2: return 0.4
-    if mode == 3: return 0.2
+    if mode == 1: return 1.25
+    if mode == 2: return 0.7
+    if mode == 3: return 0.45
     # mode 0 (Default)
-    return 0.6 # 係數越小，允許更劇烈的加減速變化
+    return 1.0 # 係數越小，允許更劇烈的加減速變化
+    #return 0.45
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
@@ -116,7 +116,7 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   elif personality==log.LongitudinalPersonality.aggressive:
     # 讀取自定義設定
     mode = params_cache.get_int("AggressiveFollow", 0)
-    if mode == 1: return 0.85
+    if mode == 1: return 1.175
     if mode == 2: return 0.75
     if mode == 3: return 0.65
     # mode 0 (Default)
@@ -146,16 +146,16 @@ def get_STOP_DISTANCE(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 4.5 # 停止時與前車的距離 (米)
   elif personality==log.LongitudinalPersonality.standard:
-    #return 4.0
-    return 3.5
+    return 4.0
   elif personality==log.LongitudinalPersonality.aggressive:
     # 讀取自定義設定
     mode = params_cache.get_int("AggressiveStopDist", 0)
-    if mode == 1: return 1.5
-    if mode == 2: return 1.0
-    if mode == 3: return 0.5
+    if mode == 1: return 3.5
+    if mode == 2: return 3.0
+    if mode == 3: return 2.5
     # mode 0 (Default)
     return 2.0
+    #return 4.0
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 

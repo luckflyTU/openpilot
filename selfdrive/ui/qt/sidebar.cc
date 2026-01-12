@@ -228,6 +228,7 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
   */
 
+  /* 使用幾個 Core 2026/01/12-
   QString core_disp;
   try {
     std::string car_cpu_status = Params().get("CarCpuStatus");
@@ -240,10 +241,15 @@ void Sidebar::updateState(const UIState &s) {
     LOGW("Error getting CarCpuStatus: %s", e.what());
     core_disp = "ERR";
   }
-
   ItemStatus pandaStatus = {{tr("ONLINE"), core_disp.toUtf8().data()}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO PANDA"), core_disp.toUtf8().data()}, danger_color};
+  }
+  */
+
+  ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
+  if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
+    pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 

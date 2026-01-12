@@ -6,8 +6,6 @@ from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.params import Params
-import psutil
 
 # Constants
 SET_SPEED_NA = 255
@@ -72,12 +70,6 @@ class HudRenderer(Widget):
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
 
     self._exp_button: ExpButton = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
-    self.params = Params()
-    self.card_cpu_cores = ""
-    # === [新增] CPU 使用率相關變數 ===
-    self.cpu_usage_str = "CPU: --%"
-    self.frame_count = 0
-    # --------------------------------
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -107,18 +99,6 @@ class HudRenderer(Widget):
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-    # Update CPU usage every 30 frames
-    self.frame_count += 1
-    if self.frame_count >= 30:
-      try:
-        usage = psutil.cpu_percent(interval=None)
-        self.cpu_usage_str = f"CPU Usage: {usage:.1f}%"
-      except Exception:
-        self.cpu_usage_str = "CPU Usage: Err"
-      self.frame_count = 0
-
-
-
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
     # Draw the header background
@@ -135,7 +115,6 @@ class HudRenderer(Widget):
       self._draw_set_speed(rect)
 
     self._draw_current_speed(rect)
-    self._draw_cpu_status(rect)
 
     button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
     button_y = rect.y + UI_CONFIG.border_size
@@ -194,48 +173,7 @@ class HudRenderer(Widget):
     speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
     rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
 
-    unit_text = "[km/h]" if ui_state.is_metric else "mph"
+    unit_text = "km/h" if ui_state.is_metric else "mph"
     unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
-
-    unit_text = self.cpu_usage_str
-    unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
-    unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 400 - unit_text_size.y / 2)
-    rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
-
-  # ---------------------------------------------------
-  # [新增] 從 Params 讀取 CPU 狀態
-  # ---------------------------------------------------
-  def _draw_cpu_status(self, rect: rl.Rectangle):
-    # 將 CPU 資訊顯示在左側 MAX 速度錶下方
-    set_speed_width = UI_CONFIG.set_speed_width_metric if ui_state.is_metric else UI_CONFIG.set_speed_width_imperial
-    base_x = rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
-    base_y = rect.y + 45 + UI_CONFIG.set_speed_height + 10 # 在 MAX speed box 下方
-
-    line_spacing = 40
-    font_size = 28
-    text_color = COLORS.white
-
-    # ---------------------------------------------------
-    # 1. 取得核心綁定狀態 (從 Params 讀取)
-    # ---------------------------------------------------
-    core_status = "Core Bind: Err"
-    try:
-        status_bytes = self.params.get("CarCpuStatus")
-        if status_bytes:
-            core_status = f"Core Bind: {status_bytes.decode('utf-8')}"
-        else:
-            core_status = "Core Bind: Wait..."
-    except Exception:
-        core_status = "Core Bind: Err"
-
-    # ---------------------------------------------------
-    # 2. 繪圖 (分兩行繪製)
-    # ---------------------------------------------------
-    # 第一行：顯示核心綁定狀態
-    rl.draw_text_ex(self._font_medium, core_status, rl.Vector2(base_x, base_y), font_size, 0, text_color)
-
-    # 第二行：顯示 CPU 使用率
-    cpu_usage_pos_y = base_y + line_spacing
-    rl.draw_text_ex(self._font_medium, self.cpu_usage_str, rl.Vector2(base_x, cpu_usage_pos_y), font_size, 0, text_color)

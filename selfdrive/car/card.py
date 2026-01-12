@@ -384,6 +384,7 @@ def main():
     except Exception as e2:
       cloudlog.error("Fallback config_realtime_process(0) also failed: %s. Continuing without affinity.", e2)
 
+  """
   # Check and record the final CPU affinity after attempting configuration
   try:
     current_affinity = list(os.sched_getaffinity(0))
@@ -391,7 +392,7 @@ def main():
   except Exception:
     cloudlog.exception("card failed to get cpu affinity")
     Params().put("CarCpuStatus", "CPU Check Err".encode('utf-8'))
-
+  """
   car = Car()
   car.card_thread()
 

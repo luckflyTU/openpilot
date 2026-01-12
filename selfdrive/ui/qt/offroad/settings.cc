@@ -446,7 +446,7 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 
 void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   if (!param.isEmpty()) {
-    // Check if param ends with "Panel" to determine if it's a panel name
+    // Check if param endsWith "Panel" to determine if it's a panel name
     if (param.endsWith("Panel")) {
       QString panelName = param;
       panelName.chop(5); // Remove "Panel" suffix
@@ -823,96 +823,125 @@ TimpilotPanel::TimpilotPanel(QWidget* parent) : QWidget(parent) {
 }
 
 KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *toggle_layout = new QVBoxLayout(this);
+  // 1. 初始化主介面布局
+  toggle_layout = new QVBoxLayout(this);
   toggle_layout->setSpacing(2);
 
-    // 2026/01/06 --- 新增開始: Storage Usage 邏輯 & Device Type ---
+  // 2. 初始化專門放置儲存空間資訊的容器 (子 Layout)
+  storage_layout = new QVBoxLayout();
+  storage_layout->setSpacing(2);
+  toggle_layout->addLayout(storage_layout);
+
+  // 3. 處理儲存空間 UI 初始化 (只建立一次)
   try {
-    bool storageFound = false;
+    bool foundAny = false;
     for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
       if (storage.isValid() && storage.isReady()) {
-        // 1. 過濾唯讀的檔案系統 (例如系統分區)
         if (storage.isReadOnly()) continue;
-
-        // 2. 過濾總容量為 0 的掛載點 (避免顯示特殊虛擬裝置)
         if (storage.bytesTotal() <= 0) continue;
 
-        // 3. 過濾常見的虛擬檔案系統類型
         const QStringList ignored_fs = {"tmpfs", "devtmpfs", "overlay", "squashfs", "sysfs", "proc", "autofs"};
         if (ignored_fs.contains(storage.fileSystemType())) continue;
 
-        // 計算使用量
-        double total_gb = storage.bytesTotal() / 1e9;
-        double avail_gb = storage.bytesAvailable() / 1e9;
-        double used_gb = total_gb - avail_gb;
-        int percent = static_cast<int>((used_gb / total_gb) * 100.0);
+        // 建立 Label
+        QString label_title = QString("%1 (%2)").arg(storage.rootPath()).arg(QString(storage.device()));
+        LabelControl *lbl = new LabelControl(label_title, tr("Loading..."));
         
-        QString storage_info = QString("%1% (%2 GB / %3 GB)")
-                        .arg(percent)
-                        .arg(QString::number(used_gb, 'f', 1))
-                        .arg(QString::number(total_gb, 'f', 1));
-        
-        // 顯示標題: 掛載點 (裝置路徑)
-        QString label = QString("%1 (%2)").arg(storage.rootPath()).arg(QString(storage.device()));
-        
-        toggle_layout->addWidget(new LabelControl(label, storage_info));
-        storageFound = true;
+        // 加入 Layout 並記錄到 Map (以便稍後更新數值)
+        storage_layout->addWidget(lbl);
+        storage_labels.insert(storage.rootPath(), lbl);
+        foundAny = true;
       }
     }
-
-    // 若未發現任何符合條件的儲存裝置
-    if (!storageFound) {
-      toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("None")));
+    
+    if (!foundAny) {
+       storage_layout->addWidget(new LabelControl(tr("Storage"), tr("None")));
     }
-  } catch (std::exception &e) {
-    qWarning() << "Failed to get storage info:" << e.what();
-    toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("Error")));
+
   } catch (...) {
-    qWarning() << "Failed to get storage info: Unknown error";
-    toggle_layout->addWidget(new LabelControl(tr("Storage"), tr("Error")));
+    storage_layout->addWidget(new LabelControl(tr("Storage"), tr("Error")));
   }
 
-  // 判斷並顯示裝置類型
-  try {
-    QString device_type = "other";
-    if (Hardware::get_device_type() == cereal::InitData::DeviceType::TICI) {
-      device_type = "tici";
-    }
-    toggle_layout->addWidget(new LabelControl(tr("Device Type"), device_type));
-  } catch (std::exception &e) {
-    qWarning() << "Failed to get device type:" << e.what();
-    toggle_layout->addWidget(new LabelControl(tr("Device Type"), tr("Unknown")));
-  }
+  // 4. Device Type (固定資訊，初始化一次即可)
+  device_type_label = new LabelControl(tr("Device Type"), tr("Loading..."));
+  toggle_layout->addWidget(device_type_label);
 
   toggle_layout->addWidget(horizontal_line());
-  // 2026/01/06 --- 新增結束 ---
 
-  // === 新增自定義 Aggressive 設定 ===
+  // === 5. 以下為原有的控制項 (已恢復) ===
   
   // 1. Aggressive Jerk Settings (反應速度)
-  // 對應 Python 數值: [預設(0.6), 0.5, 0.4, 0.2]
-  std::vector<QString> jerk_texts{tr("Default"), tr("0.5"), tr("0.4"), tr("0.2")};
+  std::vector<QString> jerk_texts{tr("1.0"), tr("1.25"), tr("0.7"), tr("0.45")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度"),
                                           tr("Set the jerk factor for Aggressive personality. Lower value means more aggressive reaction (abrupt acceleration/braking)."),
                                           "../assets/icons/speed_limit.png",
                                           jerk_texts));
 
   // 2. Aggressive Follow Settings (跟車距離 - 時間)
-  // 對應 Python 數值: [預設(0.95s), 0.85s, 0.75s, 0.65s]
-  std::vector<QString> follow_texts{tr("Default"), tr("0.85s"), tr("0.75s"), tr("0.65s")};
+  std::vector<QString> follow_texts{tr("0.95s"), tr("1.175s"), tr("0.75s"), tr("0.65s")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間"),
                                           tr("Set the follow time (seconds) for Aggressive personality. Lower value means closer following distance."),
                                           "../assets/icons/distance.png",
                                           follow_texts));
 
   // 3. Aggressive Stop Distance Settings (停止距離)
-  // 對應 Python 數值: [預設(2.0m), 1.5m, 1.0m, 0.5m]
-  std::vector<QString> stop_texts{tr("Default"), tr("1.5m"), tr("1.0m"), tr("0.5m")};
+  std::vector<QString> stop_texts{tr("2m"), tr("3.5m"), tr("3.0m"), tr("2.5m")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離"),
                                           tr("Set the stop distance (meters) for Aggressive personality. Lower value means stopping closer to the lead car."),
                                           "../assets/icons/distance.png",
                                           stop_texts));
 
   toggle_layout->addWidget(horizontal_line());
-  // === 結束新增 ===
+  // === 結束 ===
+}
+
+// [新增] 覆寫 showEvent，當切換到此頁面時觸發
+void KpilotPanel::showEvent(QShowEvent *event) {
+  updateStorageUsage();
+  QWidget::showEvent(event);
+}
+
+void KpilotPanel::updateStorageUsage() {
+  // === 只更新文字，不增刪 Widget ===
+  try {
+    // 重新掃描系統磁碟狀態
+    for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
+      QString path = storage.rootPath();
+      
+      // 檢查此磁碟是否是我們之前建立過的 Label
+      if (storage_labels.contains(path)) {
+        LabelControl* lbl = storage_labels.value(path);
+        
+        if (storage.isValid() && storage.isReady() && lbl) {
+            double total_gb = storage.bytesTotal() / 1e9;
+            double avail_gb = storage.bytesAvailable() / 1e9;
+            double used_gb = total_gb - avail_gb;
+            int percent = static_cast<int>((used_gb / total_gb) * 100.0);
+            
+            QString storage_info = QString("%1% (%2 GB / %3 GB)")
+                            .arg(percent)
+                            .arg(QString::number(used_gb, 'f', 1))
+                            .arg(QString::number(total_gb, 'f', 1));
+            
+            // 更新 UI 文字
+            lbl->setText(storage_info);
+        }
+      }
+    }
+  } catch (std::exception &e) {
+    qWarning() << "Failed to update storage info:" << e.what();
+  } catch (...) {
+    // ignore
+  }
+
+  // 更新 Device Type
+  try {
+    QString device_type = "other";
+    if (Hardware::get_device_type() == cereal::InitData::DeviceType::TICI) {
+      device_type = "tici";
+    }
+    if (device_type_label) device_type_label->setText(device_type);
+  } catch (std::exception &e) {
+    if (device_type_label) device_type_label->setText(tr("Unknown"));
+  }
 }

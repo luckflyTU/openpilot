@@ -10,6 +10,7 @@
 #include <QStackedWidget>
 #include <QWidget>
 #include <QStackedLayout>
+#include <QMap> // [新增]
 
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
@@ -129,4 +130,19 @@ class KpilotPanel : public QWidget {
   Q_OBJECT
 public:
   explicit KpilotPanel(QWidget *parent = nullptr);
+
+protected:
+  void showEvent(QShowEvent *event) override;
+
+private:
+  void updateStorageUsage();
+
+  QVBoxLayout *toggle_layout;
+  QVBoxLayout *storage_layout; // [保留] 用於放置 Storage Labels
+  
+  // [修改] 改用 Map 來管理動態生成的 Label
+  // Key: 掛載路徑 (rootPath), Value: LabelControl*
+  QMap<QString, LabelControl*> storage_labels; 
+  
+  LabelControl *device_type_label = nullptr;
 };

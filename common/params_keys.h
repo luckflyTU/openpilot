@@ -21,7 +21,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"CameraDebugExpTime", {CLEAR_ON_MANAGER_START, STRING}},
     {"CarBatteryCapacity", {PERSISTENT, INT}},
     {"CardThreadStatus", {CLEAR_ON_MANAGER_START, STRING}},//2025/12/29
-    {"CarCpuStatus", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BYTES}},//2025/12/15
+    //{"CarCpuStatus", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BYTES}},//2025/12/15
     {"CarParams", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BYTES}},
     {"CarParamsCache", {CLEAR_ON_MANAGER_START, BYTES}},
     {"CarParamsPersistent", {PERSISTENT, BYTES}},
