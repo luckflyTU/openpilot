@@ -81,6 +81,7 @@ const EncoderInfo main_road_encoder_info = {
   .publish_name = "roadEncodeData",
   .thumbnail_name = "thumbnail",
   .filename = "fcamera.hevc",
+  //.record = false, // [修改] 關閉錄影 2026/01/12+
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(RoadEncode),
 };
@@ -88,6 +89,7 @@ const EncoderInfo main_road_encoder_info = {
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
+  //.record = false, // [修改] 關閉錄影 2026/01/12+
   .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
