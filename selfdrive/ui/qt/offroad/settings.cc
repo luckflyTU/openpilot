@@ -904,6 +904,8 @@ void KpilotPanel::showEvent(QShowEvent *event) {
 void KpilotPanel::updateStorageUsage() {
   // === 只更新文字，不增刪 Widget ===
   try {
+    QStringList updated_paths;
+
     // 重新掃描系統磁碟狀態
     for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
       QString path = storage.rootPath();
@@ -925,9 +927,18 @@ void KpilotPanel::updateStorageUsage() {
             
             // 更新 UI 文字
             lbl->setText(storage_info);
+            updated_paths.append(path);
         }
       }
     }
+
+    // 若未更新 (例如磁碟已移除或不可用)，顯示 xxx
+    for (const QString &path : storage_labels.keys()) {
+      if (!updated_paths.contains(path)) {
+        storage_labels[path]->setText("xxx");
+      }
+    }
+
   } catch (std::exception &e) {
     qWarning() << "Failed to update storage info:" << e.what();
   } catch (...) {
