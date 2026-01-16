@@ -43,7 +43,7 @@ HudRenderer::HudRenderer() {
 void HudRenderer::updateState(const UIState &s) {
   is_metric = s.scene.is_metric;
   status = s.status;
-  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame &&
+  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame && 
                    (*s.sm)["selfdriveState"].getSelfdriveState().getAlertSize() != cereal::SelfdriveState::AlertSize::NONE;
 
   blindSpotLeft = s.scene.blind_spot_left;
@@ -451,10 +451,10 @@ void HudRenderer::drawSmartCruiseControlOnroadIcon(QPainter &p, const QRect &sur
   p.drawPath(boxPath);
 }
 
-void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img,
+void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img, 
                          QColor bg_color, qreal opacity) {
   p.setOpacity(opacity);
-
+  
   // Draw background circle
   if (bg_color.alpha() > 0) {
     p.setPen(Qt::NoPen);
@@ -530,7 +530,7 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
   // Calculate the vertical position for the turn signals
   const int baseYPosition = (blindSpotLeft || blindSpotRight ? 
                            (rect.height() - signalHeight) / 2 : 350);
-
+                           
   // Calculate the x-coordinates for the turn signals
   int leftSignalXPosition = rect.width() / 2 - 50 - 360 * (blindSpotLeft ? 2 : 0);
   int rightSignalXPosition = rect.width() / 2 - 50 + 360 * (blindSpotRight ? 2 : 0);
@@ -540,14 +540,14 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
 
   // Draw the turn signals
   if (animationFrameIndex < static_cast<int>(signalImgVector.size())) {
-    const auto drawSignal = [&](const bool signalActivated, const int xPosition,
+    const auto drawSignal = [&](const bool signalActivated, const int xPosition, 
                                const bool flip, const bool blindspot) {
       if (signalActivated) {
         // Get the appropriate image from the signalImgVector
         QPixmap signal = signalImgVector[
           (blindspot ? signalImgVector.size()-1 : animationFrameIndex % totalFrames)
         ].transformed(QTransform().scale(flip ? -1 : 1, 1));
-
+        
         // Draw the image
         p.drawPixmap(xPosition, baseYPosition, signalWidth, signalHeight, signal);
       }

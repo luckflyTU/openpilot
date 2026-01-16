@@ -99,11 +99,10 @@ def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
     # 讀取自定義設定
     mode = params_cache.get_int("AggressiveJerk", 0)
     if mode == 1: return 1.25
-    if mode == 2: return 0.7
-    if mode == 3: return 0.45
+    if mode == 2: return 1.0
+    if mode == 3: return 0.65
     # mode 0 (Default)
-    return 1.0 # 係數越小，允許更劇烈的加減速變化
-    #return 0.45
+    return 0.45 # 係數越小，允許更劇烈的加減速變化
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
@@ -154,8 +153,7 @@ def get_STOP_DISTANCE(personality=log.LongitudinalPersonality.standard):
     if mode == 2: return 3.0
     if mode == 3: return 2.5
     # mode 0 (Default)
-    return 2.0
-    #return 4.0
+    return 4.0
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
@@ -282,7 +280,7 @@ def gen_long_ocp():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR, get_STOP_DISTANCE()]) 
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR, get_STOP_DISTANCE()])
 
 
   # We put all constraint cost weights to 0 and only set them at runtime

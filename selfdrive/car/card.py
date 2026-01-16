@@ -313,45 +313,22 @@ class Car:
     self.CS_prev = CS
 
   def params_thread(self, evt):
-    try:
-      while not evt.is_set():
-        self.is_metric = self.params.get_bool("IsMetric")
-        self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-        time.sleep(0.1)
-    except Exception as e:
-      cloudlog.exception(f"params_thread failed: {e}")
-    finally:
-      cloudlog.warning("params_thread exit")
+    while not evt.is_set():
+      self.is_metric = self.params.get_bool("IsMetric")
+      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      time.sleep(0.1)
 
   def card_thread(self):
-    # Event object to signal params_thread when to exit
     e = threading.Event()
-    # Create thread to background update params locally
     t = threading.Thread(target=self.params_thread, args=(e, ))
     try:
-      # Announce card thread status as Running
-      self.params.put("CardThreadStatus", "Running")
       t.start()
       while True:
-        if not t.is_alive():
-          cloudlog.error("params_thread has died, restarting...")
-          t.join()
-          e = threading.Event()
-          t = threading.Thread(target=self.params_thread, args=(e, ))
-          t.start()
         self.step()
         self.rk.monitor_time()
-    except Exception as exc:
-      # Log exception and update status to Error
-      self.params.put("CardThreadStatus", "Error")
-      cloudlog.exception(f"card_thread failed: {exc}")
     finally:
-      # Update status to Stopped
-      self.params.put("CardThreadStatus", "Stopped")
-      # Signal params_thread to exit and wait for it to join
       e.set()
       t.join()
-      cloudlog.warning("card_thread exit")
 
 
 def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
@@ -374,7 +351,8 @@ def main():
 
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
-    config_realtime_process(cores, Priority.CTRL_HIGH)
+    #config_realtime_process(cores, Priority.CTRL_HIGH)
+    config_realtime_process(6, Priority.CTRL_HIGH) #2026/01/16 6 使用率較低
   except OSError as e:
     # sched_setaffinity invalid-argument often indicates an out-of-range core index
     cloudlog.warning("config_realtime_process(%s, CTRL_HIGH) failed: %s. Falling back to core 0.", cores, e)
