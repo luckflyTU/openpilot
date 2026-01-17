@@ -253,6 +253,7 @@ class RadarD:
 
 # fuses camera and radar data for best lead detection
 def main() -> None:
+  #config_realtime_process(5 Priority.CTRL_LOW)
   config_realtime_process(6, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls

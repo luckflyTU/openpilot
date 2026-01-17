@@ -10,7 +10,8 @@ import cereal.messaging as messaging
 
 
 def main():
-  config_realtime_process(5, Priority.CTRL_LOW)
+  #config_realtime_process(5, Priority.CTRL_LOW)
+  config_realtime_process(6, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()

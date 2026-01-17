@@ -344,6 +344,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     // Default color
     QColor text_color = QColor(255, 255, 255, 255);
 
+    /*
     // Determine the text color based on the card thread status
     if (!card_thread_status.isEmpty()) {
        // Green if Running, Red if Error/Stopped
@@ -356,6 +357,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
         // Blue if status is unknown/empty
         text_color = QColor(0, 0, 255, 255);
     }
+    */
 
     // Format CPU usage strings
     QString core_disp1;
