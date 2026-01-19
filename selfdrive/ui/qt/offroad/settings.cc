@@ -871,21 +871,21 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   // === 5. 以下為原有的控制項 (已恢復) ===
   
   // 1. Aggressive Jerk Settings (反應速度)
-  std::vector<QString> jerk_texts{tr("0.45"), tr("1.25"), tr("1.0"), tr("0.65")};
+  std::vector<QString> jerk_texts{tr("1.0"), tr("1.25"), tr("0.45"), tr("0.65")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度"),
                                           tr("Set the jerk factor for Aggressive personality. Lower value means more aggressive reaction (abrupt acceleration/braking)."),
                                           "../assets/icons/speed_limit.png",
                                           jerk_texts));
 
   // 2. Aggressive Follow Settings (跟車距離 - 時間)
-  std::vector<QString> follow_texts{tr("0.95s"), tr("1.175s"), tr("0.75s"), tr("0.65s")};
+  std::vector<QString> follow_texts{tr("0.65s"), tr("1.175s"), tr("0.75s"), tr("0.95s")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間"),
                                           tr("Set the follow time (seconds) for Aggressive personality. Lower value means closer following distance."),
                                           "../assets/icons/distance.png",
                                           follow_texts));
 
   // 3. Aggressive Stop Distance Settings (停止距離)
-  std::vector<QString> stop_texts{tr("4m"), tr("3.5m"), tr("3.0m"), tr("2.5m")};
+  std::vector<QString> stop_texts{tr("3m"), tr("3.5m"), tr("4m"), tr("2.5m")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離"),
                                           tr("Set the stop distance (meters) for Aggressive personality. Lower value means stopping closer to the lead car."),
                                           "../assets/icons/distance.png",

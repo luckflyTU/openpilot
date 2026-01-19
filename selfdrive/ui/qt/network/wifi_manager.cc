@@ -49,6 +49,8 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
 
+  ipv4_forward = true;
+
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
   if (auto dongle_id = getDongleId()) {
@@ -490,6 +492,8 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
       qWarning() << "net.ipv4.ip_forward = 0";
       std::system("sudo sysctl net.ipv4.ip_forward=0");
     });
+  } else {
+    std::system("sudo sysctl net.ipv4.ip_forward=1");
   }
   call->deleteLater();
   tethering_on = true;

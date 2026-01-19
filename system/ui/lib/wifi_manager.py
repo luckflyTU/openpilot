@@ -147,7 +147,7 @@ class WifiManager:
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
-    self._ipv4_forward = False
+    self._ipv4_forward = True  # 初始化改為 True，預設允許轉發
 
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
@@ -519,6 +519,9 @@ class WifiManager:
           time.sleep(5)
           cloudlog.warning("net.ipv4.ip_forward = 0")
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
+        else:
+          # 明確啟用 IP 轉發
+          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
 
