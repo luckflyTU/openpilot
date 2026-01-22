@@ -493,7 +493,9 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
       std::system("sudo sysctl net.ipv4.ip_forward=0");
     });
   } else {
+    // Enable IP forwarding and setup NAT
     std::system("sudo sysctl net.ipv4.ip_forward=1");
+    std::system("sudo iptables-legacy -t nat -C POSTROUTING -s 192.168.43.0/24 -j MASQUERADE || sudo iptables-legacy -t nat -A POSTROUTING -s 192.168.43.0/24 -j MASQUERADE");
   }
   call->deleteLater();
   tethering_on = true;

@@ -147,7 +147,7 @@ class WifiManager:
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
-    self._ipv4_forward = True  # 初始化改為 True，預設允許轉發
+    self._ipv4_forward = True
 
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
@@ -520,8 +520,9 @@ class WifiManager:
           cloudlog.warning("net.ipv4.ip_forward = 0")
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
         else:
-          # 明確啟用 IP 轉發
+          # Enable IP forwarding and setup NAT
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=False)
+          subprocess.run("sudo iptables-legacy -t nat -C POSTROUTING -s 192.168.43.0/24 -j MASQUERADE || sudo iptables-legacy -t nat -A POSTROUTING -s 192.168.43.0/24 -j MASQUERADE", shell=True, check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
 
