@@ -336,6 +336,11 @@ void WifiManager::initConnections() {
   if (!isKnownConnection(tethering_ssid)) {
     addTetheringConnection();
   }
+
+  // [修改] 開機初始化後，強制啟用熱點
+  if (tethering_ssid != "" && !adapter.isEmpty()) {
+    setTetheringEnabled(true);
+  }
 }
 
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
