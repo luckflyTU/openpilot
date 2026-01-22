@@ -182,6 +182,10 @@ class WifiManager:
         self._add_tethering_connection()
 
       self._tethering_password = self._get_tethering_password()
+      
+      # [修改] 開機初始化後，強制啟用熱點
+      self.set_tethering_active(True)
+      
       cloudlog.debug("WifiManager initialized")
 
     threading.Thread(target=worker, daemon=True).start()
@@ -277,7 +281,7 @@ class WifiManager:
       if self._active:
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
           # Scan for networks every 10 seconds
-          # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
+          # TODO: should update when scan is complete (PropertiesChanges), but this is more than good enough for now
           self._update_networks()
           self._request_scan()
           self._last_network_update = time.monotonic()
