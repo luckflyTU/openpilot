@@ -49,8 +49,6 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
 
-  ipv4_forward = true;
-
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
   if (auto dongle_id = getDongleId()) {
@@ -336,11 +334,6 @@ void WifiManager::initConnections() {
   if (!isKnownConnection(tethering_ssid)) {
     addTetheringConnection();
   }
-
-  // [修改] 開機初始化後，強制啟用熱點
-  if (tethering_ssid != "" && !adapter.isEmpty()) {
-    setTetheringEnabled(true);
-  }
 }
 
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
@@ -497,10 +490,6 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
       qWarning() << "net.ipv4.ip_forward = 0";
       std::system("sudo sysctl net.ipv4.ip_forward=0");
     });
-  } else {
-    // Enable IP forwarding and setup NAT
-    std::system("sudo sysctl net.ipv4.ip_forward=1");
-    std::system("sudo iptables-legacy -t nat -C POSTROUTING -s 192.168.43.0/24 -j MASQUERADE || sudo iptables-legacy -t nat -A POSTROUTING -s 192.168.43.0/24 -j MASQUERADE");
   }
   call->deleteLater();
   tethering_on = true;

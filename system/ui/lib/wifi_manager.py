@@ -147,7 +147,7 @@ class WifiManager:
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
-    self._ipv4_forward = True
+    self._ipv4_forward = False
 
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
@@ -182,10 +182,6 @@ class WifiManager:
         self._add_tethering_connection()
 
       self._tethering_password = self._get_tethering_password()
-      
-      # [修改] 開機初始化後，強制啟用熱點
-      self.set_tethering_active(True)
-      
       cloudlog.debug("WifiManager initialized")
 
     threading.Thread(target=worker, daemon=True).start()
@@ -281,7 +277,7 @@ class WifiManager:
       if self._active:
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
           # Scan for networks every 10 seconds
-          # TODO: should update when scan is complete (PropertiesChanges), but this is more than good enough for now
+          # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
           self._update_networks()
           self._request_scan()
           self._last_network_update = time.monotonic()
@@ -523,10 +519,6 @@ class WifiManager:
           time.sleep(5)
           cloudlog.warning("net.ipv4.ip_forward = 0")
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
-        else:
-          # Enable IP forwarding and setup NAT
-          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=1"], check=False)
-          subprocess.run("sudo iptables-legacy -t nat -C POSTROUTING -s 192.168.43.0/24 -j MASQUERADE || sudo iptables-legacy -t nat -A POSTROUTING -s 192.168.43.0/24 -j MASQUERADE", shell=True, check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
 
