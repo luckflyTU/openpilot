@@ -331,23 +331,23 @@ class Car:
       t.join()
 
 
-def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
-  """Return either an int or a list of cores that exist on this device,
-     filtered from the preferred tuple."""
-  try:
-    cpu_cnt = os.cpu_count() or 1
-    valid = [c for c in preferred if 0 <= c < cpu_cnt]
-    if not valid:
-      return 0
-    # return single int when only one valid core, else return list
-    return valid[0] if len(valid) == 1 else valid
-  except Exception:
-    cloudlog.exception("card failed to choose ctrl cores")
-    return 4
+# def _choose_ctrl_cores(preferred=(0, 1, 2, 3)):
+#   """Return either an int or a list of cores that exist on this device,
+#      filtered from the preferred tuple."""
+#   try:
+#     cpu_cnt = os.cpu_count() or 1
+#     valid = [c for c in preferred if 0 <= c < cpu_cnt]
+#     if not valid:
+#       return 0
+#     # return single int when only one valid core, else return list
+#     return valid[0] if len(valid) == 1 else valid
+#   except Exception:
+#     cloudlog.exception("card failed to choose ctrl cores")
+#     return 4
 
 def main():
   # Choose robust cores for control (favor LITTLE cores on big.LITTLE SoCs like SD845)
-  cores = _choose_ctrl_cores(preferred=(0, 1, 2, 3))
+  #cores = _choose_ctrl_cores(preferred=(0, 1, 2, 3))
 
   # Try to configure realtime affinity; on failure fallback to core 0 and log
   try:
