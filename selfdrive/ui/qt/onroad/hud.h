@@ -17,7 +17,7 @@ public:
 private:
   void drawSetSpeed(QPainter &p, const QRect &surface_rect);
   void drawCurrentSpeed(QPainter &p, const QRect &surface_rect);
-  void drawCpuStatus(QPainter &p, const QRect &surface_rect);
+  //void drawCpuStatus(QPainter &p, const QRect &surface_rect);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void drawText(QPainter &p, int x, int y, const QString &text, QColor color);
 
@@ -92,9 +92,9 @@ private:
   bool turnSignalRight = false;
   bool rightHandDM = false;
   int personalityProfile = 0;
-  
-  // ²K¥[³o­ÓÅÜ¶q¨Ó¦sÀx¹p¹Fª¬ºA
-  bool leadOneRadar = false; 
+
+  // ï¿½Kï¿½[ï¿½oï¿½ï¿½ï¿½Ü¶qï¿½Ó¦sï¿½xï¿½pï¿½Fï¿½ï¿½ï¿½A
+  bool leadOneRadar = false;
 
   int animationFrameIndex = 0;
   static constexpr int totalFrames = 4;
