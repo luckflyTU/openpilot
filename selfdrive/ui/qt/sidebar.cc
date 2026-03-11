@@ -94,90 +94,96 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("wifiAddr", deviceState.getWifiIpAddress().cStr());
 
   // Calculate CPU usage
-  frame_count++;
-  if (frame_count >= 30) {
-    try {
-      QFile file("/proc/stat");
-      if (file.open(QIODevice::ReadOnly)) {
-        QTextStream in(&file);
-        QString line = in.readLine();
-        if (line.startsWith("cpu ")) {
-          QStringList list = line.split(' ', QString::SkipEmptyParts);
-          if (list.size() > 4) {
-            uint64_t user = list[1].toULongLong();
-            uint64_t nice = list[2].toULongLong();
-            uint64_t system = list[3].toULongLong();
-            uint64_t idle = list[4].toULongLong();
+  //暫不顯示 CPU 使用率
+  // frame_count++;
+  // if (frame_count >= 30) {
+  //   try {
+  //     QFile file("/proc/stat");
+  //     if (file.open(QIODevice::ReadOnly)) {
+  //       QTextStream in(&file);
+  //       QString line = in.readLine();
+  //       if (line.startsWith("cpu ")) {
+  //         QStringList list = line.split(' ', QString::SkipEmptyParts);
+  //         if (list.size() > 4) {
+  //           uint64_t user = list[1].toULongLong();
+  //           uint64_t nice = list[2].toULongLong();
+  //           uint64_t system = list[3].toULongLong();
+  //           uint64_t idle = list[4].toULongLong();
 
-            uint64_t total = user + nice + system + idle;
-            if (last_cpu_total > 0) {
-              uint64_t total_diff = total - last_cpu_total;
-              uint64_t idle_diff = idle - last_cpu_idle;
-              if (total_diff > 0) {
-                cpu_usage = (1.0 - (double)idle_diff / total_diff) * 100;
-              }
-            }
-            last_cpu_total = total;
-            last_cpu_idle = idle;
-          }
-        }
+  //           uint64_t total = user + nice + system + idle;
+  //           if (last_cpu_total > 0) {
+  //             uint64_t total_diff = total - last_cpu_total;
+  //             uint64_t idle_diff = idle - last_cpu_idle;
+  //             if (total_diff > 0) {
+  //               cpu_usage = (1.0 - (double)idle_diff / total_diff) * 100;
+  //             }
+  //           }
+  //           last_cpu_total = total;
+  //           last_cpu_idle = idle;
+  //         }
+  //       }
 
-        /*
-        // Calculate CPU usage per core
-        int i = 0;
-        while (!in.atEnd()) {
-          line = in.readLine();
-          if (line.startsWith("cpu" + QString::number(i))) {
-            if (cpu_core_usages.size() <= i) {
-              cpu_core_usages.resize(i + 1);
-              last_cpu_core_totals.resize(i + 1);
-              last_cpu_core_idles.resize(i + 1);
-            }
-            QStringList list = line.split(' ', QString::SkipEmptyParts);
-            if (list.size() > 4) {
-              uint64_t user = list[1].toULongLong();
-              uint64_t nice = list[2].toULongLong();
-              uint64_t system = list[3].toULongLong();
-              uint64_t idle = list[4].toULongLong();
-              uint64_t total = user + nice + system + idle;
-              if (last_cpu_core_totals[i] > 0) {
-                uint64_t total_diff = total - last_cpu_core_totals[i];
-                uint64_t idle_diff = idle - last_cpu_core_idles[i];
-                if (total_diff > 0) {
-                  cpu_core_usages[i] = (1.0 - (double)idle_diff / total_diff) * 100;
-                }
-              }
-              last_cpu_core_totals[i] = total;
-              last_cpu_core_idles[i] = idle;
-            }
-            i++;
-          } else {
-            break;
-          }
-        }
-        */
-        file.close();
-      }
-    } catch (const std::exception& e) {
-      LOGW("Error calculating CPU usage: %s", e.what());
-    }
-    frame_count = 0;
-  }
+  //       /*
+  //       // Calculate CPU usage per core
+  //       int i = 0;
+  //       while (!in.atEnd()) {
+  //         line = in.readLine();
+  //         if (line.startsWith("cpu" + QString::number(i))) {
+  //           if (cpu_core_usages.size() <= i) {
+  //             cpu_core_usages.resize(i + 1);
+  //             last_cpu_core_totals.resize(i + 1);
+  //             last_cpu_core_idles.resize(i + 1);
+  //           }
+  //           QStringList list = line.split(' ', QString::SkipEmptyParts);
+  //           if (list.size() > 4) {
+  //             uint64_t user = list[1].toULongLong();
+  //             uint64_t nice = list[2].toULongLong();
+  //             uint64_t system = list[3].toULongLong();
+  //             uint64_t idle = list[4].toULongLong();
+  //             uint64_t total = user + nice + system + idle;
+  //             if (last_cpu_core_totals[i] > 0) {
+  //               uint64_t total_diff = total - last_cpu_core_totals[i];
+  //               uint64_t idle_diff = idle - last_cpu_core_idles[i];
+  //               if (total_diff > 0) {
+  //                 cpu_core_usages[i] = (1.0 - (double)idle_diff / total_diff) * 100;
+  //               }
+  //             }
+  //             last_cpu_core_totals[i] = total;
+  //             last_cpu_core_idles[i] = idle;
+  //           }
+  //           i++;
+  //         } else {
+  //           break;
+  //         }
+  //       }
+  //       */
+  //       file.close();
+  //     }
+  //   } catch (const std::exception& e) {
+  //     LOGW("Error calculating CPU usage: %s", e.what());
+  //   }
+  //   frame_count = 0;
+  // }
 
-  QString cpu_disp = QString::number(cpu_usage) + "%";
+
+  //QString cpu_disp = QString::number(cpu_usage) + "%";
   ItemStatus connectStatus;
   try {
     auto last_ping = deviceState.getLastAthenaPingTime();
     if (last_ping == 0) {
-      connectStatus = ItemStatus{{tr("OFFLINE"), cpu_disp.toUtf8().data()}, warning_color};
+      //connectStatus = ItemStatus{{tr("OFFLINE"), cpu_disp.toUtf8().data()}, warning_color};
+      connectStatus = ItemStatus{{tr("CONNECT"), tr("OFFLINE")}, warning_color};
     } else {
       connectStatus = nanos_since_boot() - last_ping < 80e9
-                          ? ItemStatus{{tr("ONLINE"), cpu_disp.toUtf8().data()}, good_color}
-                          : ItemStatus{{tr("ERROR"), cpu_disp.toUtf8().data()}, danger_color};
+      //                    ? ItemStatus{{tr("ONLINE"), cpu_disp.toUtf8().data()}, good_color}
+      //                    : ItemStatus{{tr("ERROR"), cpu_disp.toUtf8().data()}, danger_color};
+                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color}
+                        : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
+
     }
   } catch (const std::exception& e) {
     LOGW("Error getting connect status: %s", e.what());
-    connectStatus = ItemStatus{{tr("CPU"), tr("ERR")}, danger_color};
+    connectStatus = ItemStatus{{tr("CONNECT"), tr("ERR")}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 

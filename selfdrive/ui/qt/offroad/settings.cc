@@ -650,15 +650,15 @@ TimpilotPanel::TimpilotPanel(QWidget* parent) : QWidget(parent) {
         double avail_gb = storage.bytesAvailable() / 1e9;
         double used_gb = total_gb - avail_gb;
         int percent = static_cast<int>((used_gb / total_gb) * 100.0);
-        
+
         QString storage_info = QString("%1% (%2 GB / %3 GB)")
                         .arg(percent)
                         .arg(QString::number(used_gb, 'f', 1))
                         .arg(QString::number(total_gb, 'f', 1));
-        
+
         // 顯示標題: 掛載點 (裝置路徑)
         QString label = QString("%1 (%2)").arg(storage.rootPath()).arg(QString(storage.device()));
-        
+
         toggle_layout->addWidget(new LabelControl(label, storage_info));
         storageFound = true;
       }
@@ -846,14 +846,14 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
         // 建立 Label
         QString label_title = QString("%1 (%2)").arg(storage.rootPath()).arg(QString(storage.device()));
         LabelControl *lbl = new LabelControl(label_title, tr("Loading..."));
-        
+
         // 加入 Layout 並記錄到 Map (以便稍後更新數值)
         storage_layout->addWidget(lbl);
         storage_labels.insert(storage.rootPath(), lbl);
         foundAny = true;
       }
     }
-    
+
     if (!foundAny) {
        storage_layout->addWidget(new LabelControl(tr("Storage"), tr("None")));
     }
@@ -869,23 +869,23 @@ KpilotPanel::KpilotPanel(QWidget* parent) : QWidget(parent) {
   toggle_layout->addWidget(horizontal_line());
 
   // === 5. 以下為原有的控制項 (已恢復) ===
-  
+
   // 1. Aggressive Jerk Settings (反應速度)
-  std::vector<QString> jerk_texts{tr("1.0"), tr("1.25"), tr("0.45"), tr("0.65")};
+  std::vector<QString> jerk_texts{tr("0.45"), tr("1.25"), tr("1.0"), tr("0.65")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveJerk", tr("反應速度"),
                                           tr("Set the jerk factor for Aggressive personality. Lower value means more aggressive reaction (abrupt acceleration/braking)."),
                                           "../assets/icons/speed_limit.png",
                                           jerk_texts));
 
   // 2. Aggressive Follow Settings (跟車距離 - 時間)
-  std::vector<QString> follow_texts{tr("0.65s"), tr("1.175s"), tr("0.75s"), tr("0.95s")};
+  std::vector<QString> follow_texts{tr("0.95s"), tr("1.25s"), tr("0.75s"), tr("0.65s")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveFollow", tr("跟車距離-時間"),
                                           tr("Set the follow time (seconds) for Aggressive personality. Lower value means closer following distance."),
                                           "../assets/icons/distance.png",
                                           follow_texts));
 
   // 3. Aggressive Stop Distance Settings (停止距離)
-  std::vector<QString> stop_texts{tr("3m"), tr("3.5m"), tr("4m"), tr("2.5m")};
+  std::vector<QString> stop_texts{tr("4m"), tr("5m"), tr("4.5m"), tr("3m")};
   toggle_layout->addWidget(new ButtonParamControl("AggressiveStopDist", tr("停止距離"),
                                           tr("Set the stop distance (meters) for Aggressive personality. Lower value means stopping closer to the lead car."),
                                           "../assets/icons/distance.png",
@@ -909,22 +909,22 @@ void KpilotPanel::updateStorageUsage() {
     // 重新掃描系統磁碟狀態
     for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
       QString path = storage.rootPath();
-      
+
       // 檢查此磁碟是否是我們之前建立過的 Label
       if (storage_labels.contains(path)) {
         LabelControl* lbl = storage_labels.value(path);
-        
+
         if (storage.isValid() && storage.isReady() && lbl) {
             double total_gb = storage.bytesTotal() / 1e9;
             double avail_gb = storage.bytesAvailable() / 1e9;
             double used_gb = total_gb - avail_gb;
             int percent = static_cast<int>((used_gb / total_gb) * 100.0);
-            
+
             QString storage_info = QString("%1% (%2 GB / %3 GB)")
                             .arg(percent)
                             .arg(QString::number(used_gb, 'f', 1))
                             .arg(QString::number(total_gb, 'f', 1));
-            
+
             // 更新 UI 文字
             lbl->setText(storage_info);
             updated_paths.append(path);

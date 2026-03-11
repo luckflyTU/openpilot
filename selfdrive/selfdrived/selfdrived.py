@@ -134,15 +134,16 @@ class SelfdriveD(CruiseHelper):
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
     self.ignored_processes = set()
-    nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
-    if not nvme_expected:
-      for _ in range(5):
-        time.sleep(1)
-        nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
-        if nvme_expected:
-          break
+    # nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
+    # if not nvme_expected:
+    #   for _ in range(5):
+    #     time.sleep(1)
+    #     nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
+    #     if nvme_expected:
+    #       break
 
-    if HARDWARE.get_device_type() == 'tici' and not nvme_expected:
+    #if HARDWARE.get_device_type() == 'tici' and not nvme_expected:
+    if HARDWARE.get_device_type() == 'tici': #直接忽略檢查
       self.ignored_processes = {'loggerd', }
 
     # Determine startup event

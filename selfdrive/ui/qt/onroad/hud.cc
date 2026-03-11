@@ -43,7 +43,7 @@ HudRenderer::HudRenderer() {
 void HudRenderer::updateState(const UIState &s) {
   is_metric = s.scene.is_metric;
   status = s.status;
-  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame && 
+  hideBottomIcons = s.sm->rcv_frame("selfdriveState") > s.scene.started_frame &&
                    (*s.sm)["selfdriveState"].getSelfdriveState().getAlertSize() != cereal::SelfdriveState::AlertSize::NONE;
 
   blindSpotLeft = s.scene.blind_spot_left;
@@ -128,6 +128,7 @@ void HudRenderer::updateState(const UIState &s) {
     road_name = QString::fromStdString(live_map_data.getRoadName());
   }
 
+  /* 不顯示 CPU 使用率
   // Calculate CPU usage
   frame_count++;
   if (frame_count >= 60) {
@@ -186,6 +187,7 @@ void HudRenderer::updateState(const UIState &s) {
     }
     frame_count = 0;
   }
+  */
 }
 
 void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
@@ -257,10 +259,10 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
     }
   }
   drawCurrentSpeed(p, surface_rect);
-  
+
   // 已移除原本在此處繪製 RADAR 指示器的代碼，改至 drawCurrentSpeed 中變色處理
-  
-  drawCpuStatus(p, surface_rect);
+
+  //drawCpuStatus(p, surface_rect); 不顯示 CPU 使用率
 
   if (drivingPersonalitiesUIWheel && !hideBottomIcons) {
     drawDrivingPersonalities(p, surface_rect);
@@ -331,6 +333,7 @@ void HudRenderer::drawCurrentSpeed(QPainter &p, const QRect &surface_rect) {
   drawText(p, surface_rect.center().x(), 290, is_metric ? tr("km/h") : tr("mph"), 200);
 }
 
+/* 不顯示 CPU 使用率
 void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
   try {
     // Determine the position for drawing text
@@ -357,7 +360,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
         // Blue if status is unknown/empty
         text_color = QColor(0, 0, 255, 255);
     }
-    */
+    * /
 
     // Format CPU usage strings
     QString core_disp1;
@@ -394,6 +397,7 @@ void HudRenderer::drawCpuStatus(QPainter &p, const QRect &surface_rect) {
     // For example: qDebug() << "Error in drawCpuStatus:" << e.what();
   }
 }
+*/
 
 void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = p.fontMetrics().boundingRect(text);
@@ -453,10 +457,10 @@ void HudRenderer::drawSmartCruiseControlOnroadIcon(QPainter &p, const QRect &sur
   p.drawPath(boxPath);
 }
 
-void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img, 
+void HudRenderer::drawIcon(QPainter &p, QPoint pos, const QPixmap &img,
                          QColor bg_color, qreal opacity) {
   p.setOpacity(opacity);
-  
+
   // Draw background circle
   if (bg_color.alpha() > 0) {
     p.setPen(Qt::NoPen);
@@ -530,9 +534,9 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
   constexpr int signalWidth = 142;
 
   // Calculate the vertical position for the turn signals
-  const int baseYPosition = (blindSpotLeft || blindSpotRight ? 
+  const int baseYPosition = (blindSpotLeft || blindSpotRight ?
                            (rect.height() - signalHeight) / 2 : 350);
-                           
+
   // Calculate the x-coordinates for the turn signals
   int leftSignalXPosition = rect.width() / 2 - 50 - 360 * (blindSpotLeft ? 2 : 0);
   int rightSignalXPosition = rect.width() / 2 - 50 + 360 * (blindSpotRight ? 2 : 0);
@@ -542,14 +546,14 @@ void HudRenderer::drawTimSignals(QPainter &p, const QRect &rect) {
 
   // Draw the turn signals
   if (animationFrameIndex < static_cast<int>(signalImgVector.size())) {
-    const auto drawSignal = [&](const bool signalActivated, const int xPosition, 
+    const auto drawSignal = [&](const bool signalActivated, const int xPosition,
                                const bool flip, const bool blindspot) {
       if (signalActivated) {
         // Get the appropriate image from the signalImgVector
         QPixmap signal = signalImgVector[
           (blindspot ? signalImgVector.size()-1 : animationFrameIndex % totalFrames)
         ].transformed(QTransform().scale(flip ? -1 : 1, 1));
-        
+
         // Draw the image
         p.drawPixmap(xPosition, baseYPosition, signalWidth, signalHeight, signal);
       }
